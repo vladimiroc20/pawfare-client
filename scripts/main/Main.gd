@@ -5,7 +5,9 @@ const ProjectileScene := preload("res://scenes/weapons/Projectile.tscn")
 const PlayerScene := preload("res://scenes/characters/Player.tscn")
 
 @export_range(2, 4) var player_count: int = 2
+@export var biome_id: String = "" # vacío = aleatorio cada partida
 
+@onready var background: Background = $Background
 @onready var terrain: Terrain = $Terrain
 @onready var obstacles_node: Node2D = $Obstacles
 @onready var players_host: Node2D = $PlayersHost
@@ -20,6 +22,7 @@ var current_turn_index: int = 0
 var wind: float = 0.0
 var game_over: bool = false
 var projectile: Projectile = null
+var current_biome: Dictionary = Biomes.LIST[0]
 
 var drag_active: bool = false
 var drag_cur: Vector2 = Vector2.ZERO
@@ -31,6 +34,9 @@ func _ready() -> void:
 	new_game()
 
 func new_game() -> void:
+	current_biome = Biomes.get_biome(biome_id) if biome_id != "" else Biomes.random_biome()
+	background.set_biome(current_biome)
+	terrain.set_biome(current_biome)
 	terrain.generate_terrain()
 	_generate_obstacles()
 	_spawn_players()
@@ -43,6 +49,7 @@ func new_game() -> void:
 	effects.clear()
 
 	_roll_wind()
+	hud.set_biome_text(str(current_biome.icon, " ", current_biome.name))
 	hud.setup_players(_player_ids(), _player_colors(), _player_labels())
 	for p in players:
 		hud.set_health(p.player_id, p.health)
@@ -88,17 +95,20 @@ func _generate_obstacles() -> void:
 		o.queue_free()
 	obstacles.clear()
 
+	var count := clampi(Constants.OBSTACLE_COUNT + int(current_biome.get("obstacle_delta", 0)), 1, 6)
 	var zone_start := Constants.SCREEN_W * 0.28
 	var zone_end := Constants.SCREEN_W * 0.72
 	var zone_w := zone_end - zone_start
-	for i in Constants.OBSTACLE_COUNT:
-		var x := zone_start + (zone_w / (Constants.OBSTACLE_COUNT - 1)) * i + (randf() * 34.0 - 17.0)
+	for i in count:
+		var t := float(i) / float(count - 1) if count > 1 else 0.5
+		var x := zone_start + zone_w * t + (randf() * 34.0 - 17.0)
 		var size: Dictionary = Constants.ROCK_SIZES[randi() % Constants.ROCK_SIZES.size()]
 		var r: float = size.min + randf() * (size.max - size.min)
 
 		var rock: Rock = RockScene.instantiate()
 		obstacles_node.add_child(rock)
 		rock.position = Vector2(x, terrain.height_at(x))
+		rock.apply_palette(current_biome.rock, current_biome.rock_accent)
 		rock.setup(r, size.hp)
 		obstacles.append(rock)
 
@@ -106,7 +116,7 @@ func current_player() -> Player:
 	return players[current_turn_index]
 
 func _roll_wind() -> void:
-	wind = (randf() * 2.0 - 1.0) * 1.6
+	wind = (randf() * 2.0 - 1.0) * 1.6 * float(current_biome.get("wind_scale", 1.0))
 	var abs_wind := absf(wind)
 	var strength := "calma"
 	if abs_wind > 1.1:

@@ -3,6 +3,7 @@ class_name Hud
 
 signal restart_pressed
 
+@onready var biome_label: Label = %BiomeLabel
 @onready var health_row: HBoxContainer = %HealthRow
 @onready var turn_label: Label = %TurnLabel
 @onready var wind_label: Label = %WindLabel
@@ -45,6 +46,9 @@ func setup_players(ids: Array, colors: Array, labels: Array) -> void:
 
 		health_row.add_child(box)
 		_bars[id] = bar
+
+func set_biome_text(text: String) -> void:
+	biome_label.text = text
 
 func set_health(player_id: String, value: float) -> void:
 	if _bars.has(player_id):

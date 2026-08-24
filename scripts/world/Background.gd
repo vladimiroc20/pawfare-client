@@ -1,17 +1,26 @@
 extends Node2D
 class_name Background
 
-const SKY_STOPS := [
-	[0.0, Color("4fa8dc")],
-	[0.45, Color("79c6ea")],
-	[0.75, Color("bfe4f5")],
-	[1.0, Color("e8f6fa")],
-]
+var sky_stops: Array = Biomes.LIST[0].sky
+var mountain_color: Color = Biomes.LIST[0].mountain
+var sun_color: Color = Biomes.LIST[0].sun_color
+var sun_glow: Color = Biomes.LIST[0].sun_glow
+var is_night: bool = false
 
 var clouds: Array = []
+var stars: Array = []
 
 func _ready() -> void:
 	_generate_clouds()
+	_generate_stars()
+
+func set_biome(biome: Dictionary) -> void:
+	sky_stops = biome.sky
+	mountain_color = biome.mountain
+	sun_color = biome.sun_color
+	sun_glow = biome.sun_glow
+	is_night = biome.is_night
+	queue_redraw()
 
 func _generate_clouds() -> void:
 	clouds.clear()
@@ -23,6 +32,16 @@ func _generate_clouds() -> void:
 			"speed": 0.08 + randf() * 0.12,
 		})
 
+func _generate_stars() -> void:
+	stars.clear()
+	for i in 40:
+		stars.append({
+			"x": randf() * Constants.SCREEN_W,
+			"y": randf() * Constants.SCREEN_H * 0.55,
+			"r": 0.6 + randf() * 1.4,
+			"a": 0.4 + randf() * 0.6,
+		})
+
 func _physics_process(_delta: float) -> void:
 	for c in clouds:
 		c.x += c.speed
@@ -32,6 +51,8 @@ func _physics_process(_delta: float) -> void:
 
 func _draw() -> void:
 	_draw_sky()
+	if is_night:
+		_draw_stars()
 	_draw_sun()
 	_draw_mountains()
 	_draw_clouds()
@@ -43,17 +64,22 @@ func _draw_sky() -> void:
 	for i in steps:
 		var t0 := float(i) / steps
 		var t1 := float(i + 1) / steps
-		var col := DrawUtils.lerp_stops(SKY_STOPS, t0)
+		var col := DrawUtils.lerp_stops(sky_stops, t0)
 		draw_rect(Rect2(0, h * t0, w, h * (t1 - t0) + 1.0), col)
+
+func _draw_stars() -> void:
+	for s in stars:
+		draw_circle(Vector2(s.x, s.y), s.r, Color(1, 1, 1, s.a))
 
 func _draw_sun() -> void:
 	var sun := Vector2(Constants.SCREEN_W * 0.84, 70.0)
-	var r := 70
+	var max_r := 70 if not is_night else 46
+	var r := max_r
 	while r > 0:
-		var t := float(r) / 70.0
-		draw_circle(sun, r, Color(1.0, 0.957, 0.745, (1.0 - t) * 0.9))
+		var t := float(r) / float(max_r)
+		draw_circle(sun, r, Color(sun_glow.r, sun_glow.g, sun_glow.b, (1.0 - t) * (0.9 if not is_night else 0.5)))
 		r -= 4
-	draw_circle(sun, 24.0, Color("fff6d8"))
+	draw_circle(sun, 24.0 if not is_night else 18.0, sun_color)
 
 func _draw_mountains() -> void:
 	var w := Constants.SCREEN_W
@@ -66,10 +92,10 @@ func _draw_mountains() -> void:
 		points.append(Vector2(x, y))
 		x += 20.0
 	points.append(Vector2(w, h * 0.5))
-	draw_colored_polygon(points, Color(120.0 / 255.0, 150.0 / 255.0, 170.0 / 255.0, 0.45))
+	draw_colored_polygon(points, mountain_color)
 
 func _draw_clouds() -> void:
-	var col := Color(1, 1, 1, 0.85)
+	var col := Color(1, 1, 1, 0.85 if not is_night else 0.25)
 	for c in clouds:
 		var center := Vector2(c.x, c.y)
 		var s: float = c.scale

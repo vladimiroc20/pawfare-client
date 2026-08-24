@@ -6,16 +6,17 @@ const RES := 4.0
 var heights: PackedFloat32Array = PackedFloat32Array()
 var samples: int = 0
 
-const GRADIENT_STOPS := [
-	[0.0, Color("8bc34a")],
-	[0.12, Color("6d9c3c")],
-	[0.18, Color("8d6e4a")],
-	[1.0, Color("5a4632")],
-]
+var gradient_stops: Array = Biomes.LIST[0].terrain
+var grass_color: Color = Biomes.LIST[0].grass
 
 func _ready() -> void:
 	samples = int(Constants.SCREEN_W / RES) + 1
 	generate_terrain()
+
+func set_biome(biome: Dictionary) -> void:
+	gradient_stops = biome.terrain
+	grass_color = biome.grass
+	queue_redraw()
 
 func generate_terrain() -> void:
 	heights.resize(samples)
@@ -65,20 +66,20 @@ func _draw_fill() -> void:
 	var span := Constants.SCREEN_H - top
 
 	points.append(Vector2(0, Constants.SCREEN_H))
-	colors.append(GRADIENT_STOPS[-1][1])
+	colors.append(gradient_stops[-1][1])
 	for i in samples:
 		var x := i * RES
 		var y: float = heights[i]
 		var t: float = clampf((y - top) / span, 0.0, 1.0)
 		points.append(Vector2(x, y))
-		colors.append(DrawUtils.lerp_stops(GRADIENT_STOPS, t))
+		colors.append(DrawUtils.lerp_stops(gradient_stops, t))
 	points.append(Vector2(Constants.SCREEN_W, Constants.SCREEN_H))
-	colors.append(GRADIENT_STOPS[-1][1])
+	colors.append(gradient_stops[-1][1])
 
 	draw_polygon(points, colors)
 
 func _draw_grass_tufts() -> void:
-	var col := Color(0.235, 0.431, 0.157, 0.65)
+	var col := grass_color
 	var i := 0
 	while i < samples:
 		var x := i * RES

@@ -25,7 +25,7 @@ pawfare-client/
 │   ├── obstacles/Rock.gd     # forma procedural, grietas, destrucción
 │   ├── weapons/Projectile.gd # integración de física por tick
 │   ├── effects/Effects.gd    # explosión + escombros
-│   ├── world/Background.gd, AimOverlay.gd
+│   ├── world/Background.gd, AimOverlay.gd, Biomes.gd (tabla de biomas)
 │   ├── ui/Hud.gd
 │   ├── util/Constants.gd, DrawUtils.gd
 │   └── dev/smoke_test.gd     # test de regresión headless, ver más abajo
@@ -58,4 +58,6 @@ Todo el arte (personajes, rocas, nubes, terreno) se dibuja por código en `_draw
 - Solo hay 2 especies dibujadas (perro/gato, sección 7.1 del maestro); para 3-4 jugadores `Constants.PLAYER_SPECIES` las cicla (`["dog","cat","dog","cat"]`), diferenciados por color. Cuando se cierre el roster de especies (Fase 1) hay que ampliar esa lista y el dibujo en `Player.gd`.
 - Las posiciones de spawn se reparten uniformemente entre los márgenes del mapa (`_spawn_players` en `Main.gd`); no evitan la zona de rocas a propósito — no hace falta, las rocas no bloquean el spawn, solo los disparos.
 
-**Próximo hito:** Fase 3 — servidor `pawfare-server` con salas Colyseus de 2 a 4 jugadores, bot de respaldo si alguien se desconecta, y reconexión. El modelo de N jugadores del cliente ya está listo para que el servidor solo tenga que sincronizar `players`, turno activo y terreno — no requiere otro rediseño del lado del cliente para soportarlo.
+**Sistema de biomas (5 mapas, sin arte final todavía):** `scripts/world/Biomes.gd` define una tabla de biomas (`Patio Trasero`, `Playa`, `Bosque Nocturno`, `Cumbre Nevada`, `Callejón Urbano`) — cada uno con su propia paleta de cielo/terreno/rocas, densidad de obstáculos (`obstacle_delta`) y fuerza de viento (`wind_scale`), más el modo noche (luna + estrellas en vez de sol) para el bosque nocturno. `Main.gd` elige un bioma al azar cada partida (`biome_id` vacío) o uno fijo si se fuerza vía el `@export biome_id` del nodo `Main` (útil para probar un bioma específico en el editor). Todo esto es 100% paramétrico por código — no depende de assets de imagen, así que no bloquea ni compite con la Fase 1 (roster/arte final); cuando llegue el arte definitivo, cada bioma es el punto de partida natural para su propia dirección de fondos/props. El smoke test valida que los 5 biomas cargan sin error y que la densidad de obstáculos y el modo noche coinciden con lo esperado.
+
+**Próximo hito:** Fase 3 — servidor `pawfare-server` con salas Colyseus de 2 a 4 jugadores, bot de respaldo si alguien se desconecta, y reconexión. El modelo de N jugadores y de biomas del cliente ya está listo para que el servidor solo tenga que sincronizar `players`, turno activo, bioma elegido y terreno — no requiere otro rediseño del lado del cliente para soportarlo.

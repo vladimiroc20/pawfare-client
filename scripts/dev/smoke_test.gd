@@ -3,15 +3,13 @@ extends SceneTree
 func _initialize() -> void:
 	_run_case(2)
 	_run_case(4)
-	print("smoke test OK — 2 y 4 jugadores: disparo, cráter, daño y rotación de turno funcionan")
+	for biome in Biomes.LIST:
+		_run_biome_case(biome.id)
+	print("smoke test OK — jugadores (2/4), rotación de turno y todos los biomas cargan sin errores")
 	quit()
 
 func _run_case(n: int) -> void:
-	var main_scene: PackedScene = load("res://scenes/main/Main.tscn")
-	var main: Node = main_scene.instantiate()
-	main.player_count = n
-	root.add_child(main)
-	main.propagate_call("_ready")
+	var main := _spawn_main(n, "backyard")
 
 	assert(main.players.size() == n)
 	for p in main.players:
@@ -35,3 +33,20 @@ func _run_case(n: int) -> void:
 	assert(main.current_turn_index != 0)
 
 	main.queue_free()
+
+func _run_biome_case(biome_id: String) -> void:
+	var main := _spawn_main(2, biome_id)
+	var biome: Dictionary = Biomes.get_biome(biome_id)
+	var expected_count: int = clampi(Constants.OBSTACLE_COUNT + int(biome.get("obstacle_delta", 0)), 1, 6)
+	assert(main.obstacles.size() == expected_count)
+	assert(main.background.is_night == biome.is_night)
+	main.queue_free()
+
+func _spawn_main(n: int, biome_id: String) -> Node:
+	var main_scene: PackedScene = load("res://scenes/main/Main.tscn")
+	var main: Node = main_scene.instantiate()
+	main.player_count = n
+	main.biome_id = biome_id
+	root.add_child(main)
+	main.propagate_call("_ready")
+	return main

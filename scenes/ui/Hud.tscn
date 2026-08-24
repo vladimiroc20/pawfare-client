@@ -32,6 +32,13 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 4
 
+[node name="BiomeLabel" type="Label" parent="Root/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+text = ""
+theme_override_font_sizes/font_size = 12
+
 [node name="HealthRow" type="HBoxContainer" parent="Root/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2

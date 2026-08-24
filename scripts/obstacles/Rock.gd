@@ -4,14 +4,22 @@ class_name Rock
 var radius: float = 0.0
 var health: float = 0.0
 var max_health: float = 0.0
-var has_moss: bool = false
+var has_accent: bool = false
 var shape_points: Array = []
+
+var rock_color: Color = Color("7d8896")
+var accent_color: Color = Color(0.42, 0.557, 0.247, 0.55)
+
+func apply_palette(base: Color, accent: Color) -> void:
+	rock_color = base
+	accent_color = accent
+	queue_redraw()
 
 func setup(r: float, hp: float) -> void:
 	radius = r
 	health = hp
 	max_health = hp
-	has_moss = radius > 22.0 and randf() < 0.7
+	has_accent = radius > 22.0 and randf() < 0.7
 	_generate_shape()
 	queue_redraw()
 
@@ -36,14 +44,14 @@ func _draw() -> void:
 		var a: float = pt.a
 		var r: float = pt.rad
 		pts.append(Vector2(cos(a) * r, -sin(a) * r))
-	draw_colored_polygon(pts, Color("7d8896"))
+	draw_colored_polygon(pts, rock_color)
 	var outline := pts.duplicate()
 	outline.append(pts[0])
 	draw_polyline(outline, Color(0, 0, 0, 0.25), 2.0)
 
-	if has_moss:
-		draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-radius * 0.3, -radius * 0.6), radius * 0.4, radius * 0.22, -0.3), Color(0.42, 0.557, 0.247, 0.55))
-		draw_colored_polygon(DrawUtils.ellipse_points(Vector2(radius * 0.35, -radius * 0.35), radius * 0.28, radius * 0.16, 0.4), Color(0.42, 0.557, 0.247, 0.55))
+	if has_accent:
+		draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-radius * 0.3, -radius * 0.6), radius * 0.4, radius * 0.22, -0.3), accent_color)
+		draw_colored_polygon(DrawUtils.ellipse_points(Vector2(radius * 0.35, -radius * 0.35), radius * 0.28, radius * 0.16, 0.4), accent_color)
 
 	_draw_cracks()
 
