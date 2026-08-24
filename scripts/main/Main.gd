@@ -143,6 +143,7 @@ func _generate_obstacles() -> void:
 		obstacles_node.add_child(rock)
 		rock.position = Vector2(x, terrain.height_at(x))
 		rock.terrain = terrain
+		rock.effects = effects
 		rock.apply_palette(current_biome.rock, current_biome.rock_accent)
 		rock.setup(r, size.hp)
 		obstacles.append(rock)

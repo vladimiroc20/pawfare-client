@@ -11,9 +11,15 @@ var rock_color: Color = Color("7d8896")
 var accent_color: Color = Color(0.42, 0.557, 0.247, 0.55)
 
 var terrain: Terrain
+var effects: Effects
 var fall_vy: float = 0.0
+var land_squash: float = 0.0
 
 func _physics_process(_delta: float) -> void:
+	if land_squash > 0.0:
+		land_squash = maxf(0.0, land_squash - 0.08)
+		queue_redraw()
+
 	if not terrain:
 		return
 	var ground_y := terrain.height_at(position.x)
@@ -23,8 +29,20 @@ func _physics_process(_delta: float) -> void:
 		# flotando en el aire en vez de caer.
 		fall_vy += Constants.KNOCK_GRAVITY
 		position.y = minf(position.y + fall_vy, ground_y)
+	elif fall_vy > 0.5:
+		# Acaba de aterrizar tras una caída perceptible (no solo el ajuste de 1px de
+		# margen) — vender el golpe con un poco de física, no dejar que la roca
+		# simplemente se detenga en seco sin ninguna reacción.
+		_on_landed()
+		fall_vy = 0.0
 	else:
 		fall_vy = 0.0
+
+func _on_landed() -> void:
+	land_squash = 1.0
+	if effects:
+		effects.spawn_debris(position.x, position.y, 4, radius)
+	Sfx.play("hit", -6.0, 0.8)
 
 func apply_palette(base: Color, accent: Color) -> void:
 	rock_color = base
@@ -53,6 +71,14 @@ func take_hit() -> bool:
 	return health <= 0.0
 
 func _draw() -> void:
+	# Al aterrizar tras una caída, se aplasta un poco y se ensancha (como si el
+	# impacto la hundiera brevemente) en vez de simplemente detenerse en seco.
+	var squash := Vector2(1.0 + land_squash * 0.14, 1.0 - land_squash * 0.16)
+	var xform := Transform2D(0.0, Vector2.ZERO)
+	xform.x *= squash.x
+	xform.y *= squash.y
+	draw_set_transform_matrix(xform)
+
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(0, 3), radius * 1.05, radius * 0.3), Color(0, 0, 0, 0.2))
 
 	var pts := PackedVector2Array()
@@ -70,6 +96,7 @@ func _draw() -> void:
 		draw_colored_polygon(DrawUtils.ellipse_points(Vector2(radius * 0.35, -radius * 0.35), radius * 0.28, radius * 0.16, 0.4), accent_color)
 
 	_draw_cracks()
+	draw_set_transform_matrix(Transform2D.IDENTITY)
 
 func _draw_cracks() -> void:
 	var damage_ratio := 1.0 - health / max_health
