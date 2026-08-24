@@ -30,8 +30,16 @@ var drag_cur: Vector2 = Vector2.ZERO
 const DEFAULT_HINT := "Toca y arrastra a tu personaje hacia atrás, luego suelta"
 
 func _ready() -> void:
+	if GameConfig.configured:
+		player_count = GameConfig.player_count
+		biome_id = GameConfig.biome_id
+
 	hud.restart_pressed.connect(new_game)
+	hud.menu_pressed.connect(_on_menu_pressed)
 	new_game()
+
+func _on_menu_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
 
 func new_game() -> void:
 	current_biome = Biomes.get_biome(biome_id) if biome_id != "" else Biomes.random_biome()

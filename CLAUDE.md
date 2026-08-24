@@ -13,12 +13,15 @@ Estructura real del proyecto:
 ```
 pawfare-client/
 ├── scenes/
-│   ├── main/Main.tscn        # escena raíz, orquesta el estado de partida
+│   ├── menu/MainMenu.tscn     # escena inicial: título, selector de jugadores/mapa, jugar
+│   ├── main/Main.tscn         # partida — orquesta el estado de juego
 │   ├── characters/Player.tscn
 │   ├── obstacles/Rock.tscn
 │   ├── weapons/Projectile.tscn
 │   └── ui/Hud.tscn
 ├── scripts/
+│   ├── autoload/GameConfig.gd # singleton: pasa player_count/biome_id del menú a Main
+│   ├── menu/MainMenu.gd
 │   ├── main/Main.gd          # turnos, input, viento, resolución de explosiones
 │   ├── characters/Player.gd  # cuerpo dibujado por código, arma, knockback
 │   ├── terrain/Terrain.gd    # mapa de alturas, carve_crater, render
@@ -60,4 +63,6 @@ Todo el arte (personajes, rocas, nubes, terreno) se dibuja por código en `_draw
 
 **Sistema de biomas (5 mapas, sin arte final todavía):** `scripts/world/Biomes.gd` define una tabla de biomas (`Patio Trasero`, `Playa`, `Bosque Nocturno`, `Cumbre Nevada`, `Callejón Urbano`) — cada uno con su propia paleta de cielo/terreno/rocas, densidad de obstáculos (`obstacle_delta`) y fuerza de viento (`wind_scale`), más el modo noche (luna + estrellas en vez de sol) para el bosque nocturno. `Main.gd` elige un bioma al azar cada partida (`biome_id` vacío) o uno fijo si se fuerza vía el `@export biome_id` del nodo `Main` (útil para probar un bioma específico en el editor). Todo esto es 100% paramétrico por código — no depende de assets de imagen, así que no bloquea ni compite con la Fase 1 (roster/arte final); cuando llegue el arte definitivo, cada bioma es el punto de partida natural para su propia dirección de fondos/props. El smoke test valida que los 5 biomas cargan sin error y que la densidad de obstáculos y el modo noche coinciden con lo esperado.
 
-**Próximo hito:** Fase 3 — servidor `pawfare-server` con salas Colyseus de 2 a 4 jugadores, bot de respaldo si alguien se desconecta, y reconexión. El modelo de N jugadores y de biomas del cliente ya está listo para que el servidor solo tenga que sincronizar `players`, turno activo, bioma elegido y terreno — no requiere otro rediseño del lado del cliente para soportarlo.
+**Menú principal mínimo:** `MainMenu.tscn` es ahora la escena de arranque del proyecto (`run/main_scene`). Deja elegir cantidad de jugadores (2-4) y mapa (aleatorio o uno fijo de los 5 biomas), y al presionar "Jugar" guarda esa elección en el autoload `GameConfig` (`scripts/autoload/GameConfig.gd`) antes de cambiar a `Main.tscn`. `Main.gd` solo sobreescribe sus `@export` (`player_count`, `biome_id`) desde `GameConfig` si `GameConfig.configured` es `true` — así probar `Main.tscn` directo en el editor (F6) sigue funcionando con sus valores por defecto, sin pasar por el menú. Desde la pantalla de fin de partida hay botones para revancha (misma configuración) o volver al menú. No hay pantalla de "Opciones" todavía — no tiene sentido hasta que exista algo real que configurar (audio, etc.), y el lobby real (crear/unirse a sala) se construye en la Fase 3 contra el servidor, no antes.
+
+**Próximo hito:** Fase 3 — servidor `pawfare-server` con salas Colyseus de 2 a 4 jugadores, bot de respaldo si alguien se desconecta, y reconexión. El modelo de N jugadores, biomas y el menú del cliente ya están listos para que el servidor solo tenga que sincronizar `players`, turno activo, bioma elegido y terreno — no requiere otro rediseño del lado del cliente para soportarlo.

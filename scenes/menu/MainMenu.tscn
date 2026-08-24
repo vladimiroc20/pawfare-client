@@ -1,0 +1,91 @@
+[gd_scene load_steps=3 format=3 uid="uid://b6xk2q1w0m5tj"]
+
+[ext_resource type="Script" path="res://scripts/menu/MainMenu.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/world/Background.gd" id="2"]
+
+[node name="MainMenu" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Background" type="Node2D" parent="."]
+script = ExtResource("2")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="UI/Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="UI/Root/Center"]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="UI/Root/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="UI/Root/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="Title" type="Label" parent="UI/Root/Center/Panel/Margin/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "🐾 PAWFARE"
+theme_override_font_sizes/font_size = 34
+
+[node name="Subtitle" type="Label" parent="UI/Root/Center/Panel/Margin/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Artillería por turnos con mascotas tiernas"
+theme_override_font_sizes/font_size = 13
+
+[node name="PlayerCountRow" type="HBoxContainer" parent="UI/Root/Center/Panel/Margin/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="UI/Root/Center/Panel/Margin/VBox/PlayerCountRow"]
+layout_mode = 2
+text = "Jugadores"
+
+[node name="PlayerCountOption" type="OptionButton" parent="UI/Root/Center/Panel/Margin/VBox/PlayerCountRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
+
+[node name="BiomeRow" type="HBoxContainer" parent="UI/Root/Center/Panel/Margin/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="UI/Root/Center/Panel/Margin/VBox/BiomeRow"]
+layout_mode = 2
+text = "Mapa"
+
+[node name="BiomeOption" type="OptionButton" parent="UI/Root/Center/Panel/Margin/VBox/BiomeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(180, 0)
+
+[node name="PlayButton" type="Button" parent="UI/Root/Center/Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "▶ Jugar"

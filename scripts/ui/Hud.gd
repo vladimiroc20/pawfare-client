@@ -2,6 +2,7 @@ extends CanvasLayer
 class_name Hud
 
 signal restart_pressed
+signal menu_pressed
 
 @onready var biome_label: Label = %BiomeLabel
 @onready var health_row: HBoxContainer = %HealthRow
@@ -10,12 +11,15 @@ signal restart_pressed
 @onready var hint_label: Label = %HintLabel
 @onready var winner_label: Label = %WinnerLabel
 @onready var restart_button: Button = %RestartButton
+@onready var menu_button: Button = %MenuButton
 
 var _bars: Dictionary = {}
 
 func _ready() -> void:
 	restart_button.pressed.connect(func(): restart_pressed.emit())
+	menu_button.pressed.connect(func(): menu_pressed.emit())
 	restart_button.visible = false
+	menu_button.visible = false
 	winner_label.text = ""
 
 func setup_players(ids: Array, colors: Array, labels: Array) -> void:
@@ -68,3 +72,4 @@ func set_winner(text: String) -> void:
 
 func show_restart(visible_: bool) -> void:
 	restart_button.visible = visible_
+	menu_button.visible = visible_

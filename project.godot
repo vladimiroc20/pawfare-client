@@ -7,8 +7,12 @@ config_version=5
 [application]
 
 config/name="Pawfare"
-run/main_scene="res://scenes/main/Main.tscn"
+run/main_scene="res://scenes/menu/MainMenu.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
+
+[autoload]
+
+GameConfig="*res://scripts/autoload/GameConfig.gd"
 
 [display]
 
