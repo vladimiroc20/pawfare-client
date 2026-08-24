@@ -1,9 +1,8 @@
-[gd_scene load_steps=8 format=3 uid="uid://cq7v2m4x9j3wb"]
+[gd_scene load_steps=7 format=3 uid="uid://cq7v2m4x9j3wb"]
 
 [ext_resource type="Script" path="res://scripts/main/Main.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/world/Background.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/terrain/Terrain.gd" id="3"]
-[ext_resource type="PackedScene" uid="uid://dqx0j6h5m6t8a" path="res://scenes/characters/Player.tscn" id="4"]
 [ext_resource type="Script" path="res://scripts/world/AimOverlay.gd" id="5"]
 [ext_resource type="Script" path="res://scripts/effects/Effects.gd" id="6"]
 [ext_resource type="PackedScene" uid="uid://dv4h3q1n8s2ab" path="res://scenes/ui/Hud.tscn" id="7"]
@@ -19,9 +18,7 @@ script = ExtResource("3")
 
 [node name="Obstacles" type="Node2D" parent="."]
 
-[node name="Player1" parent="." instance=ExtResource("4")]
-
-[node name="Player2" parent="." instance=ExtResource("4")]
+[node name="PlayersHost" type="Node2D" parent="."]
 
 [node name="AimOverlay" type="Node2D" parent="."]
 script = ExtResource("5")

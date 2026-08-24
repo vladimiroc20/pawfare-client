@@ -19,6 +19,18 @@ const KNOCK_GRAVITY := 0.5
 const OBSTACLE_COUNT := 3
 const ROCK_HIT_DAMAGE := 30.0
 
+const MIN_PLAYERS := 2
+const MAX_PLAYERS := 4
+
+const PLAYER_COLORS := [
+	Color("3b82f6"),
+	Color("ef4444"),
+	Color("22c55e"),
+	Color("eab308"),
+]
+const PLAYER_SPECIES := ["dog", "cat", "dog", "cat"]
+const PLAYER_LABELS := ["Jugador 1 🔵", "Jugador 2 🔴", "Jugador 3 🟢", "Jugador 4 🟡"]
+
 const ROCK_SIZES := [
 	{"min": 12.0, "max": 18.0, "hp": 30.0},
 	{"min": 19.0, "max": 27.0, "hp": 55.0},

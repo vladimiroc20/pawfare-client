@@ -2,19 +2,21 @@ extends Node2D
 
 const RockScene := preload("res://scenes/obstacles/Rock.tscn")
 const ProjectileScene := preload("res://scenes/weapons/Projectile.tscn")
+const PlayerScene := preload("res://scenes/characters/Player.tscn")
+
+@export_range(2, 4) var player_count: int = 2
 
 @onready var terrain: Terrain = $Terrain
 @onready var obstacles_node: Node2D = $Obstacles
-@onready var player1: Player = $Player1
-@onready var player2: Player = $Player2
+@onready var players_host: Node2D = $PlayersHost
 @onready var aim_overlay: AimOverlay = $AimOverlay
 @onready var projectile_host: Node2D = $ProjectileHost
 @onready var effects: Effects = $Effects
 @onready var hud: Hud = $Hud
 
-var players: Dictionary = {}
+var players: Array[Player] = []
 var obstacles: Array[Rock] = []
-var current_player_id: String = "p1"
+var current_turn_index: int = 0
 var wind: float = 0.0
 var game_over: bool = false
 var projectile: Projectile = null
@@ -25,30 +27,15 @@ var drag_cur: Vector2 = Vector2.ZERO
 const DEFAULT_HINT := "Toca y arrastra a tu personaje hacia atrás, luego suelta"
 
 func _ready() -> void:
-	players = {"p1": player1, "p2": player2}
-	player1.player_id = "p1"
-	player1.species = "dog"
-	player1.body_color = Color("3b82f6")
-	player1.dir = 1
-	player1.terrain = terrain
-
-	player2.player_id = "p2"
-	player2.species = "cat"
-	player2.body_color = Color("ef4444")
-	player2.dir = -1
-	player2.terrain = terrain
-
 	hud.restart_pressed.connect(new_game)
 	new_game()
 
 func new_game() -> void:
 	terrain.generate_terrain()
 	_generate_obstacles()
+	_spawn_players()
 
-	player1.reset(110.0)
-	player2.reset(Constants.SCREEN_W - 110.0)
-
-	current_player_id = "p1"
+	current_turn_index = 0
 	game_over = false
 	drag_active = false
 	aim_overlay.active = false
@@ -56,12 +43,45 @@ func new_game() -> void:
 	effects.clear()
 
 	_roll_wind()
-	hud.set_health("p1", player1.health)
-	hud.set_health("p2", player2.health)
+	hud.setup_players(_player_ids(), _player_colors(), _player_labels())
+	for p in players:
+		hud.set_health(p.player_id, p.health)
 	hud.set_winner("")
 	hud.show_restart(false)
 	hud.set_hint(DEFAULT_HINT)
 	_update_turn_label()
+
+func _player_ids() -> Array:
+	return players.map(func(p): return p.player_id)
+
+func _player_colors() -> Array:
+	return players.map(func(p): return p.body_color)
+
+func _player_labels() -> Array:
+	var n := players.size()
+	return Constants.PLAYER_LABELS.slice(0, n)
+
+func _spawn_players() -> void:
+	for p in players:
+		p.queue_free()
+	players.clear()
+
+	var n := clampi(player_count, Constants.MIN_PLAYERS, Constants.MAX_PLAYERS)
+	var margin := 90.0
+	for i in n:
+		var t := float(i) / float(n - 1) if n > 1 else 0.0
+		var x := margin + (Constants.SCREEN_W - margin * 2.0) * t
+
+		var player: Player = PlayerScene.instantiate()
+		players_host.add_child(player)
+		player.player_id = "p%d" % (i + 1)
+		player.species = Constants.PLAYER_SPECIES[i % Constants.PLAYER_SPECIES.size()]
+		player.body_color = Constants.PLAYER_COLORS[i % Constants.PLAYER_COLORS.size()]
+		player.dir = 1 if x < Constants.SCREEN_W * 0.5 else -1
+		player.terrain = terrain
+		player.reset(x)
+
+		players.append(player)
 
 func _generate_obstacles() -> void:
 	for o in obstacles:
@@ -83,10 +103,7 @@ func _generate_obstacles() -> void:
 		obstacles.append(rock)
 
 func current_player() -> Player:
-	return players[current_player_id]
-
-func other_player() -> Player:
-	return players["p2"] if current_player_id == "p1" else players["p1"]
+	return players[current_turn_index]
 
 func _roll_wind() -> void:
 	wind = (randf() * 2.0 - 1.0) * 1.6
@@ -105,8 +122,7 @@ func _roll_wind() -> void:
 		hud.set_wind_text("💨 Viento %s %s" % [strength, arrow])
 
 func _update_turn_label() -> void:
-	var name := "Jugador 1 🔵" if current_player_id == "p1" else "Jugador 2 🔴"
-	hud.set_turn_text("Turno de " + name)
+	hud.set_turn_text("Turno de " + Constants.PLAYER_LABELS[current_turn_index % Constants.PLAYER_LABELS.size()])
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -184,8 +200,15 @@ func _physics_process(_delta: float) -> void:
 
 	projectile.step(wind)
 
-	var other := other_player()
-	var hit_other := projectile.position.distance_to(other.anchor()) < 18.0
+	var shooter := current_player()
+	var hit_other := false
+	for p in players:
+		if p == shooter or p.health <= 0.0:
+			continue
+		if projectile.position.distance_to(p.anchor()) < 18.0:
+			hit_other = true
+			break
+
 	var hit_obstacle: Rock = null
 	for o in obstacles:
 		if projectile.position.distance_to(Vector2(o.position.x, o.position.y - o.radius * 0.5)) < o.radius + 6.0:
@@ -206,11 +229,10 @@ func _physics_process(_delta: float) -> void:
 
 func _trigger_explosion(pos: Vector2) -> void:
 	terrain.carve_crater(pos.x, pos.y, Constants.EXPLOSION_RADIUS)
-	player1.apply_knockback(pos)
-	player2.apply_knockback(pos)
+	for p in players:
+		p.apply_knockback(pos)
+		hud.set_health(p.player_id, p.health)
 	effects.spawn_explosion(pos.x, pos.y)
-	hud.set_health("p1", player1.health)
-	hud.set_health("p2", player2.health)
 
 func _damage_obstacle(rock: Rock, hit_pos: Vector2) -> void:
 	var destroyed := rock.take_hit()
@@ -222,14 +244,24 @@ func _damage_obstacle(rock: Rock, hit_pos: Vector2) -> void:
 		rock.queue_free()
 
 func _end_turn_check() -> void:
-	if player1.health <= 0.0 or player2.health <= 0.0:
+	var alive: Array[Player] = players.filter(func(p): return p.health > 0.0)
+	if alive.size() <= 1:
 		game_over = true
-		var winner := "Jugador 2 🔴" if player1.health <= 0.0 else "Jugador 1 🔵"
-		hud.set_winner("🏆 ¡" + winner + " gana!")
+		if alive.is_empty():
+			hud.set_winner("🏳️ Empate")
+		else:
+			var winner_index := players.find(alive[0])
+			hud.set_winner("🏆 ¡" + Constants.PLAYER_LABELS[winner_index % Constants.PLAYER_LABELS.size()] + " gana!")
 		hud.show_restart(true)
 		hud.set_hint("")
 		return
-	current_player_id = "p2" if current_player_id == "p1" else "p1"
+
+	var n := players.size()
+	for i in n:
+		current_turn_index = (current_turn_index + 1) % n
+		if players[current_turn_index].health > 0.0:
+			break
+
 	_roll_wind()
 	_update_turn_label()
 	hud.set_hint(DEFAULT_HINT)

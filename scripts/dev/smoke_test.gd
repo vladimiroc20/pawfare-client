@@ -1,13 +1,21 @@
 extends SceneTree
 
 func _initialize() -> void:
+	_run_case(2)
+	_run_case(4)
+	print("smoke test OK — 2 y 4 jugadores: disparo, cráter, daño y rotación de turno funcionan")
+	quit()
+
+func _run_case(n: int) -> void:
 	var main_scene: PackedScene = load("res://scenes/main/Main.tscn")
 	var main: Node = main_scene.instantiate()
+	main.player_count = n
 	root.add_child(main)
 	main.propagate_call("_ready")
 
-	assert(main.player1.health == 100.0)
-	assert(main.player2.health == 100.0)
+	assert(main.players.size() == n)
+	for p in main.players:
+		assert(p.health == 100.0)
 	assert(main.obstacles.size() == Constants.OBSTACLE_COUNT)
 
 	var p = main.current_player()
@@ -23,8 +31,7 @@ func _initialize() -> void:
 		frames += 1
 
 	assert(frames < 400)
-	assert(main.player1.health < 100.0)
-	assert(main.current_player_id == "p2")
+	assert(main.players[0].health < 100.0)
+	assert(main.current_turn_index != 0)
 
-	print("smoke test OK — disparo, cráter, daño y cambio de turno funcionan (p1 health: %.1f)" % main.player1.health)
-	quit()
+	main.queue_free()

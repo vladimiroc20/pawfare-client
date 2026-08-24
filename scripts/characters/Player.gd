@@ -43,6 +43,8 @@ func take_damage(amount: float) -> void:
 	health = maxf(0.0, health - amount)
 
 func apply_knockback(from: Vector2) -> void:
+	if health <= 0.0:
+		return
 	var dx := position.x - from.x
 	var dy := anchor().y - from.y
 	var d := Vector2(dx, dy).length()
