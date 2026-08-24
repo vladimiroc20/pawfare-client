@@ -12,6 +12,8 @@ const LIST := [
 		"cluster_count": 0,
 		"cluster_radius": 0.0,
 		"cluster_damage": 0.0,
+		"tunnel_ticks": 0,
+		"tunnel_radius": 0.0,
 	},
 	{
 		"id": "cluster",
@@ -23,6 +25,8 @@ const LIST := [
 		"cluster_count": 4,
 		"cluster_radius": 22.0,
 		"cluster_damage": 16.0,
+		"tunnel_ticks": 0,
+		"tunnel_radius": 0.0,
 	},
 	{
 		"id": "bouncer",
@@ -34,6 +38,21 @@ const LIST := [
 		"cluster_count": 0,
 		"cluster_radius": 0.0,
 		"cluster_damage": 0.0,
+		"tunnel_ticks": 0,
+		"tunnel_radius": 0.0,
+	},
+	{
+		"id": "piercer",
+		"name": "Perforador",
+		"icon": "🗲",
+		"explosion_radius": 26.0,
+		"damage": 22.0,
+		"bounces": 0,
+		"cluster_count": 0,
+		"cluster_radius": 0.0,
+		"cluster_damage": 0.0,
+		"tunnel_ticks": 18,
+		"tunnel_radius": 9.0,
 	},
 ]
 

@@ -230,6 +230,8 @@ func _draw_weapon(body_xform: Transform2D) -> void:
 			_draw_weapon_cluster()
 		"bouncer":
 			_draw_weapon_bouncer()
+		"piercer":
+			_draw_weapon_piercer()
 		_:
 			_draw_weapon_bazooka()
 
@@ -255,4 +257,12 @@ func _draw_weapon_bouncer() -> void:
 	draw_rect(Rect2(-4, -16, 8, 20), Color("4b5563"))
 	draw_circle(Vector2(0, -18), 5.0, Color("65a30d"))
 	draw_arc(Vector2(0, -18), 5.0, 0.0, TAU, 16, Color(0.24, 0.35, 0.06, 0.8), 1.0)
+	draw_rect(Rect2(-3, 4, 6, 5), Color("f59e0b"))
+
+func _draw_weapon_piercer() -> void:
+	draw_rect(Rect2(-2.5, -30, 5, 36), Color("3f3f46"))
+	draw_rect(Rect2(-4, -32, 8, 5), Color("18181b"))
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-2, -30), Vector2(2, -30), Vector2(0, -36)
+	]), Color("fde047"))
 	draw_rect(Rect2(-3, 4, 6, 5), Color("f59e0b"))

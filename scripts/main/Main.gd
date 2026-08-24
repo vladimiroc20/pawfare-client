@@ -239,6 +239,8 @@ func _spawn_projectile(from: Vector2, velocity: Vector2, weapon: Dictionary) -> 
 	projectile.position = from
 	projectile.velocity = velocity
 	projectile.bounces_left = int(weapon.bounces)
+	projectile.tunnel_ticks_left = int(weapon.tunnel_ticks)
+	projectile.gravity_scale = 0.15 if int(weapon.tunnel_ticks) > 0 else 1.0
 	projectile.weapon_id = String(weapon.id)
 
 func _clear_projectile() -> void:
@@ -274,6 +276,11 @@ func _physics_process(_delta: float) -> void:
 		projectile.position.y = terrain.height_at(projectile.position.x) - 1.0
 		projectile.velocity.y = -projectile.velocity.y * 0.55
 		projectile.velocity.x *= 0.85
+		return
+
+	if hit_ground and not hit_other and hit_obstacle == null and projectile.tunnel_ticks_left > 0:
+		projectile.tunnel_ticks_left -= 1
+		terrain.carve_crater(projectile.position.x, projectile.position.y, float(current_shot_weapon.tunnel_radius))
 		return
 
 	if hit_other or hit_ground or hit_obstacle != null:

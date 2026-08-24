@@ -85,16 +85,20 @@ func _run_team_mode_case() -> void:
 	main.queue_free()
 
 func _run_weapons_case() -> void:
-	var bazooka_runs := _fire_and_count_runs("bazooka", Vector2(50, -20))
-	assert(bazooka_runs == 1)
+	var bazooka := _fire_and_measure("bazooka", Vector2(50, -20))
+	assert(bazooka.runs == 1)
 
-	var cluster_runs := _fire_and_count_runs("cluster", Vector2(50, -20))
-	assert(cluster_runs > 1)
+	var cluster := _fire_and_measure("cluster", Vector2(50, -20))
+	assert(cluster.runs > 1)
 
-	var bouncer_runs := _fire_and_count_runs("bouncer", Vector2(-20, -60))
-	assert(bouncer_runs >= 1)
+	var bouncer := _fire_and_measure("bouncer", Vector2(-20, -60))
+	assert(bouncer.runs >= 1)
 
-func _fire_and_count_runs(weapon_id: String, pull: Vector2) -> int:
+	var piercer := _fire_and_measure("piercer", Vector2(-80, -30))
+	assert(piercer.spread > 0)
+	assert(piercer.spread > bazooka.spread)
+
+func _fire_and_measure(weapon_id: String, pull: Vector2) -> Dictionary:
 	var main := _spawn_main(2, "backyard")
 	main.active_weapon = Weapons.get_weapon(weapon_id)
 
@@ -115,15 +119,18 @@ func _fire_and_count_runs(weapon_id: String, pull: Vector2) -> int:
 
 	var heights_after: PackedFloat32Array = main.terrain.heights
 	var runs := 0
+	var spread := 0
 	var was_affected := false
 	for i in heights_before.size():
 		var affected: bool = absf(heights_before[i] - heights_after[i]) > 0.5
-		if affected and not was_affected:
-			runs += 1
+		if affected:
+			spread += 1
+			if not was_affected:
+				runs += 1
 		was_affected = affected
 
 	main.queue_free()
-	return runs
+	return {"runs": runs, "spread": spread}
 
 func _spawn_main(n: int, biome_id: String, team_mode: bool = false) -> Node:
 	var main_scene: PackedScene = load("res://scenes/main/Main.tscn")
