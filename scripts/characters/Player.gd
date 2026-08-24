@@ -73,6 +73,11 @@ func apply_knockback(from: Vector2, explosion_radius: float = Constants.EXPLOSIO
 func _physics_process(_delta: float) -> void:
 	_anim_time += 1.0
 	recoil = maxf(0.0, recoil - 0.045)
+	if not airborne and terrain and position.y < terrain.height_at(position.x) - 1.0:
+		# El terreno bajo los pies pudo desaparecer sin que este jugador recibiera
+		# el golpe (p. ej. el túnel del Perforador pasa lejos del punto de impacto
+		# final) — sin esto, se queda flotando sobre el cráter en vez de caer.
+		airborne = true
 	if airborne:
 		_update_knockback()
 	queue_redraw()
