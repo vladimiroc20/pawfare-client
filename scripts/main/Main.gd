@@ -23,6 +23,8 @@ var current_turn_index: int = 0
 var wind: float = 0.0
 var game_over: bool = false
 var projectile: Projectile = null
+var active_weapon: Dictionary = Weapons.get_weapon(Weapons.DEFAULT_ID)
+var current_shot_weapon: Dictionary = active_weapon
 var current_biome: Dictionary = Biomes.LIST[0]
 var elimination_order: Array[String] = []
 
@@ -39,6 +41,7 @@ func _ready() -> void:
 
 	hud.restart_pressed.connect(new_game)
 	hud.menu_pressed.connect(_on_menu_pressed)
+	hud.weapon_selected.connect(func(id: String): active_weapon = Weapons.get_weapon(id))
 	new_game()
 
 func _on_menu_pressed() -> void:
@@ -67,6 +70,7 @@ func new_game() -> void:
 		hud.set_health(p.player_id, p.health)
 	hud.hide_podium()
 	hud.show_restart(false)
+	hud.set_weapon_row_visible(true)
 	hud.set_hint(DEFAULT_HINT)
 	_update_turn_label()
 
@@ -218,14 +222,16 @@ func _on_pointer_up() -> void:
 		return
 
 	p.trigger_recoil()
-	_spawn_projectile(anchor, Vector2(-delta.x, -delta.y) * Constants.POWER_SCALE)
+	_spawn_projectile(anchor, Vector2(-delta.x, -delta.y) * Constants.POWER_SCALE, active_weapon)
 	hud.set_hint("")
 
-func _spawn_projectile(from: Vector2, velocity: Vector2) -> void:
+func _spawn_projectile(from: Vector2, velocity: Vector2, weapon: Dictionary) -> void:
+	current_shot_weapon = weapon
 	projectile = ProjectileScene.instantiate()
 	projectile_host.add_child(projectile)
 	projectile.position = from
 	projectile.velocity = velocity
+	projectile.bounces_left = int(weapon.bounces)
 
 func _clear_projectile() -> void:
 	if projectile != null:
@@ -255,20 +261,61 @@ func _physics_process(_delta: float) -> void:
 	var out_of_bounds := projectile.position.x < -20.0 or projectile.position.x > Constants.SCREEN_W + 20.0 or projectile.position.y > Constants.SCREEN_H + 40.0
 	var hit_ground := terrain.is_below_ground(projectile.position.x, projectile.position.y)
 
+	if hit_ground and not hit_other and hit_obstacle == null and projectile.bounces_left > 0:
+		projectile.bounces_left -= 1
+		projectile.position.y = terrain.height_at(projectile.position.x) - 1.0
+		projectile.velocity.y = -projectile.velocity.y * 0.55
+		projectile.velocity.x *= 0.85
+		return
+
 	if hit_other or hit_ground or hit_obstacle != null:
 		if hit_obstacle != null:
 			_damage_obstacle(hit_obstacle, projectile.position)
-		_trigger_explosion(projectile.position)
+		_resolve_impact(projectile.position, current_shot_weapon)
 		_clear_projectile()
 		_end_turn_check()
 	elif out_of_bounds:
 		_clear_projectile()
 		_end_turn_check()
 
-func _trigger_explosion(pos: Vector2) -> void:
-	terrain.carve_crater(pos.x, pos.y, Constants.EXPLOSION_RADIUS)
+func _resolve_impact(pos: Vector2, weapon: Dictionary) -> void:
+	_trigger_explosion(pos, float(weapon.explosion_radius), float(weapon.damage))
+
+	var cluster_count := int(weapon.cluster_count)
+	if cluster_count <= 0:
+		return
+
+	for i in cluster_count:
+		var angle := -PI * (0.15 + randf() * 0.7)
+		var speed := 2.0 + randf() * 2.2
+		var sign := -1.0 if randf() < 0.5 else 1.0
+		var sub_vel := Vector2(cos(angle) * speed * sign, sin(angle) * speed)
+		var sub_pos := Vector2(pos.x, pos.y - 4.0)
+
+		var frame := 0
+		while frame < 200:
+			sub_vel.y += Constants.GRAVITY
+			sub_pos += sub_vel
+			if terrain.is_below_ground(sub_pos.x, sub_pos.y):
+				break
+			if sub_pos.x < -20.0 or sub_pos.x > Constants.SCREEN_W + 20.0 or sub_pos.y > Constants.SCREEN_H + 40.0:
+				break
+			frame += 1
+
+		var sub_obstacle: Rock = null
+		for o in obstacles:
+			if sub_pos.distance_to(Vector2(o.position.x, o.position.y - o.radius * 0.5)) < o.radius + 6.0:
+				sub_obstacle = o
+				break
+		if sub_obstacle != null:
+			_damage_obstacle(sub_obstacle, sub_pos)
+
+		_trigger_explosion(sub_pos, float(weapon.cluster_radius), float(weapon.cluster_damage))
+
+func _trigger_explosion(pos: Vector2, explosion_radius: float, damage: float) -> void:
+	terrain.carve_crater(pos.x, pos.y, explosion_radius)
 	for p in players:
-		p.apply_knockback(pos)
+		p.apply_knockback(pos, explosion_radius, damage)
 		hud.set_health(p.player_id, p.health)
 	effects.spawn_explosion(pos.x, pos.y)
 

@@ -41,10 +41,10 @@ func quickmatch(player_count: int, team_mode: bool, biome_id: String) -> void:
 			join_failed.emit(String(data.get("error", "No se pudo conectar")))
 	)
 
-func fire(dx: float, dy: float) -> void:
+func fire(dx: float, dy: float, weapon_id: String = "bazooka") -> void:
 	if room_id == "":
 		return
-	var body := {"playerId": player_id, "token": token, "dx": dx, "dy": dy}
+	var body := {"playerId": player_id, "token": token, "dx": dx, "dy": dy, "weaponId": weapon_id}
 	_request("/rooms/%s/fire" % room_id, HTTPClient.METHOD_POST, body, func(ok: bool, data: Dictionary):
 		if ok:
 			last_state = data.state

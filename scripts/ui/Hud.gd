@@ -6,6 +6,7 @@ const TEAM_NAMES := ["Equipo A", "Equipo B"]
 
 signal restart_pressed
 signal menu_pressed
+signal weapon_selected(weapon_id: String)
 
 @onready var root: Control = %Root
 @onready var biome_label: Label = %BiomeLabel
@@ -13,12 +14,15 @@ signal menu_pressed
 @onready var turn_label: Label = %TurnLabel
 @onready var wind_label: Label = %WindLabel
 @onready var hint_label: Label = %HintLabel
+@onready var weapon_row: HBoxContainer = %WeaponRow
 @onready var podium_panel: PanelContainer = %PodiumPanel
 @onready var podium_list: VBoxContainer = %PodiumList
 @onready var restart_button: Button = %RestartButton
 @onready var menu_button: Button = %MenuButton
 
 var _bars: Dictionary = {}
+var _weapon_buttons: Dictionary = {}
+var selected_weapon_id: String = Weapons.DEFAULT_ID
 
 func _ready() -> void:
 	root.theme = UiTheme.build()
@@ -27,6 +31,26 @@ func _ready() -> void:
 	restart_button.visible = false
 	menu_button.visible = false
 	podium_panel.visible = false
+	_setup_weapons()
+
+func _setup_weapons() -> void:
+	for w in Weapons.LIST:
+		var btn := Button.new()
+		btn.text = str(w.icon, " ", w.name)
+		btn.toggle_mode = true
+		btn.button_pressed = w.id == selected_weapon_id
+		btn.pressed.connect(func(): _on_weapon_button_pressed(w.id))
+		weapon_row.add_child(btn)
+		_weapon_buttons[w.id] = btn
+
+func _on_weapon_button_pressed(weapon_id: String) -> void:
+	selected_weapon_id = weapon_id
+	for id in _weapon_buttons:
+		_weapon_buttons[id].button_pressed = id == weapon_id
+	weapon_selected.emit(weapon_id)
+
+func set_weapon_row_visible(visible_: bool) -> void:
+	weapon_row.visible = visible_
 
 func setup_players(ids: Array, colors: Array, labels: Array, teams: Array = []) -> void:
 	for child in health_row.get_children():
@@ -113,3 +137,5 @@ func show_podium(ranking: Array, labels: Dictionary) -> void:
 func show_restart(visible_: bool) -> void:
 	restart_button.visible = visible_
 	menu_button.visible = visible_
+	if visible_:
+		set_weapon_row_visible(false)

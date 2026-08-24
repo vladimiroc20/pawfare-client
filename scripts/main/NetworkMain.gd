@@ -21,6 +21,7 @@ var known_player_ids: Array = []
 var last_state: Dictionary = {}
 var my_player_id: String = ""
 var game_over_shown: bool = false
+var selected_weapon_id: String = Weapons.DEFAULT_ID
 
 var drag_active: bool = false
 var drag_cur: Vector2 = Vector2.ZERO
@@ -31,8 +32,10 @@ func _ready() -> void:
 	NetworkClient.action_failed.connect(func(msg: String): hud.set_hint("Error: " + msg))
 	hud.restart_pressed.connect(_on_menu_pressed)
 	hud.menu_pressed.connect(_on_menu_pressed)
+	hud.weapon_selected.connect(func(id: String): selected_weapon_id = id)
 	hud.show_restart(false)
 	hud.hide_podium()
+	hud.set_weapon_row_visible(true)
 
 	if not NetworkClient.last_state.is_empty():
 		_on_state_updated(NetworkClient.last_state)
@@ -236,5 +239,5 @@ func _on_pointer_up() -> void:
 		return
 
 	p.trigger_recoil()
-	NetworkClient.fire(-delta.x, -delta.y)
+	NetworkClient.fire(-delta.x, -delta.y, selected_weapon_id)
 	hud.set_hint("Disparo enviado...")

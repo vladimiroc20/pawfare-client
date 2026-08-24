@@ -51,7 +51,7 @@ func take_damage(amount: float) -> void:
 	if was_alive and health <= 0.0:
 		eliminated.emit()
 
-func apply_knockback(from: Vector2) -> void:
+func apply_knockback(from: Vector2, explosion_radius: float = Constants.EXPLOSION_RADIUS, damage: float = Constants.DAMAGE) -> void:
 	if health <= 0.0:
 		return
 	var dx := position.x - from.x
@@ -59,10 +59,10 @@ func apply_knockback(from: Vector2) -> void:
 	var d := Vector2(dx, dy).length()
 	if d == 0.0:
 		d = 1.0
-	var dmg_range := Constants.DAMAGE_RANGE
+	var dmg_range := explosion_radius + 20.0
 	if d < dmg_range:
 		var falloff := 1.0 - minf(d / dmg_range, 1.0)
-		take_damage(Constants.DAMAGE * (0.4 + 0.6 * falloff))
+		take_damage(damage * (0.4 + 0.6 * falloff))
 		var nx := dx / d
 		var ny := dy / d
 		knock_vx = nx * Constants.KNOCKBACK_FORCE * (0.5 + falloff)

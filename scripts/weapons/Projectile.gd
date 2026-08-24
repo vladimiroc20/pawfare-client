@@ -2,6 +2,7 @@ extends Node2D
 class_name Projectile
 
 var velocity: Vector2 = Vector2.ZERO
+var bounces_left: int = 0
 
 func step(wind: float) -> void:
 	velocity.y += Constants.GRAVITY
