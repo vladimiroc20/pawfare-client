@@ -23,6 +23,8 @@ script = ExtResource("3")
 [node name="AimOverlay" type="Node2D" parent="."]
 script = ExtResource("4")
 
+[node name="ProjectileHost" type="Node2D" parent="."]
+
 [node name="Effects" type="Node2D" parent="."]
 script = ExtResource("5")
 
