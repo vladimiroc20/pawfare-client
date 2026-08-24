@@ -33,12 +33,13 @@ pawfare-client/
 │   ├── effects/Effects.gd    # explosión + escombros
 │   ├── world/Background.gd, AimOverlay.gd, Biomes.gd (tabla de biomas)
 │   ├── ui/Hud.gd, UiTheme.gd (tema visual compartido menú+HUD)
+│   ├── audio/Sfx.gd          # singleton: sonido procedural (ver sección "Sonido" más abajo)
 │   ├── util/Constants.gd, DrawUtils.gd
 │   ├── dev/smoke_test.gd            # test de regresión del modo local, ver más abajo
 │   └── dev/network_smoke_test.gd    # test de regresión de la integración con el servidor, ver más abajo
 ├── assets/
 │   ├── sprites/   # vacío — todo el arte actual es dibujado por código (_draw())
-│   ├── audio/
+│   ├── audio/     # vacío — el sonido también es 100% generado por código, ver "Sonido" más abajo
 │   └── fonts/
 └── project.godot
 ```
@@ -100,3 +101,11 @@ Modo equipos: solo disponible con 4 jugadores (2 y 3 jugadores siempre son todos
 **Perforador (2026-08-24):** 4ta arma — gravedad reducida (`gravity_scale = 0.15` en `Projectile`), vuelo casi recto que perfora terreno (`tunnel_ticks`/`tunnel_radius`) en vez de explotar al primer contacto con el suelo. `Main._physics_process()` lo maneja igual que el rebote (mismo punto donde ya se detecta impacto contra el suelo): mientras queden "ticks" de perforación, carva un túnel angosto y sigue volando; al agotarlos o al chocar con jugador/obstáculo, explota con todo su radio/daño. El selector de armas del HUD lo recoge automáticamente (se construye desde `Weapons.LIST`, sin tocar `Hud.gd`).
 
 **Pantalla de selección de personaje (2026-08-24):** entre el menú y la partida ahora hay `CharacterSelect.tscn` — una columna por jugador local (o solo la propia en modo online), cada una cicla `Species.LIST` con flechas, más una cuenta regresiva compartida de 20s (saltable con "▶ Empezar ya"). Cualquier casilla que nadie tocó al vencer el tiempo recibe una especie al azar — nunca bloquea el inicio de la partida esperando a alguien. En local, el resultado se guarda en `GameConfig.chosen_species` y `Main._spawn_players()` lo usa en vez del ciclo fijo de `Constants.PLAYER_SPECIES` (con *fallback* automático al ciclo fijo si se corre `Main.tscn` directo en el editor, sin pasar por selección). En online, cada elección llama `NetworkClient.select_character()` → `POST /rooms/:id/select-character` (servidor, `Match.selectCharacter()`, puramente cosmético — no bloquea ni valida turno). Nota de diseño: la selección **no** bloquea el arranque de la partida en modo online — si la sala se llena mientras un jugador todavía está eligiendo, la partida ya puede estar en curso cuando esa persona llega a `NetworkMain.tscn`; es una simplificación consciente (no hay sala de espera que sincronice "todos listos").
+
+**Sonido (2026-08-24):** `scripts/audio/Sfx.gd` (autoload `Sfx`) sintetiza los efectos por código en tiempo de ejecución — igual filosofía que el arte: cero archivos en `assets/audio/`. Genera un `AudioStreamWAV` PCM de 16 bits por efecto (ondas seno/ruido con distintas envolventes de caída, ver cada `_synth_*()`), los cachea la primera vez que se piden, y los reproduce con un pool round-robin de 8 `AudioStreamPlayer` para permitir sonidos solapados (p. ej. explosión + rebote casi juntos) sin cortarse entre sí. `play(name, volume_db, pitch_scale, jitter)` aplica además una variación aleatoria de tono (`jitter`, ±0.05 por defecto) para que un mismo efecto repetido no suene idéntico cada vez.
+
+Efectos implementados: `shoot` (disparo, barrido descendente — con pitch distinto por arma: racimo más agudo, rebotante más grave, perforador el más agudo), `explosion` (ruido filtrado + retumbo grave, con pitch escalado según el radio de explosión del arma), `bounce` (rebote de la granada rebotante), `hit` (impacto contra roca), `eliminated` (KO de un jugador), `victory` (podio/fin de partida), y `ui_click` (botones de menú, HUD y selección de personaje).
+
+Cableado en ambos modos: **local** (`Main.gd`) dispara cada sonido en el mismo punto donde ya ocurre el evento (soltar el arrastre, rebote en `_physics_process`, `_trigger_explosion`, `_damage_obstacle`, `_on_player_eliminated`, fin de partida en `_end_turn_check`). **Online** (`NetworkMain.gd`) los dispara desde la animación de proyectil predicha (ver sección de red arriba) — `shoot` al spawnear el proyectil predicho, `bounce`/`explosion` en los mismos puntos donde `_physics_process` ya lanza los efectos visuales — así el audio queda sincronizado con lo que se ve volar, no con el momento en que llega el *poll* del servidor.
+
+Nota técnica para el arnés `--script`: los autoloads no entran al árbol real bajo ese harness (mismo problema documentado para `get_tree()`), así que `Sfx.play()` construye su pool de reproductores de forma perezosa y se protege con `is_inside_tree()` antes de reproducir — en el juego real (editor o build) esto siempre es `true` y no cambia nada. `smoke_test.gd`, `network_smoke_test.gd` y `character_select_smoke_test.gd` corren limpios con esto.
