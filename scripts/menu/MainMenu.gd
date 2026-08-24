@@ -55,7 +55,8 @@ func _selected_team_mode() -> bool:
 func _on_play_pressed() -> void:
 	var count: int = player_count_option.get_item_id(player_count_option.selected)
 	GameConfig.configure(count, _selected_biome_id(), _selected_team_mode())
-	get_tree().change_scene_to_file("res://scenes/main/Main.tscn")
+	GameConfig.character_select_mode = "local"
+	get_tree().change_scene_to_file("res://scenes/menu/CharacterSelect.tscn")
 
 func _on_online_pressed() -> void:
 	var count: int = player_count_option.get_item_id(player_count_option.selected)
@@ -68,7 +69,8 @@ func _on_online_pressed() -> void:
 	NetworkClient.quickmatch(count, _selected_team_mode(), _selected_biome_id())
 
 func _on_joined(_state: Dictionary) -> void:
-	get_tree().change_scene_to_file("res://scenes/main/NetworkMain.tscn")
+	GameConfig.character_select_mode = "online"
+	get_tree().change_scene_to_file("res://scenes/menu/CharacterSelect.tscn")
 
 func _on_join_failed(error: String) -> void:
 	play_button.disabled = false

@@ -105,6 +105,7 @@ func _spawn_players() -> void:
 
 	var n := clampi(player_count, Constants.MIN_PLAYERS, Constants.MAX_PLAYERS)
 	var team_mode_active := is_team_mode and n == 4
+	var use_chosen_species := GameConfig.chosen_species.size() == n
 	var margin := 90.0
 	for i in n:
 		var t := float(i) / float(n - 1) if n > 1 else 0.0
@@ -113,7 +114,7 @@ func _spawn_players() -> void:
 		var player: Player = PlayerScene.instantiate()
 		players_host.add_child(player)
 		player.player_id = "p%d" % (i + 1)
-		player.species = Constants.PLAYER_SPECIES[i % Constants.PLAYER_SPECIES.size()]
+		player.species = GameConfig.chosen_species[i] if use_chosen_species else Constants.PLAYER_SPECIES[i % Constants.PLAYER_SPECIES.size()]
 		player.body_color = Constants.PLAYER_COLORS[i % Constants.PLAYER_COLORS.size()]
 		player.dir = 1 if x < Constants.SCREEN_W * 0.5 else -1
 		player.terrain = terrain

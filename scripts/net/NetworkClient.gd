@@ -53,6 +53,12 @@ func fire(dx: float, dy: float, weapon_id: String = "bazooka") -> void:
 			action_failed.emit(String(data.get("error", "No se pudo disparar")))
 	)
 
+func select_character(species_id: String) -> void:
+	if room_id == "":
+		return
+	var body := {"playerId": player_id, "token": token, "species": species_id}
+	_request("/rooms/%s/select-character" % room_id, HTTPClient.METHOD_POST, body, func(_ok, _data): pass)
+
 func leave_match() -> void:
 	if room_id == "":
 		return
