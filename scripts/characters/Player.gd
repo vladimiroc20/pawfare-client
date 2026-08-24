@@ -3,7 +3,7 @@ class_name Player
 
 signal eliminated
 
-@export var species: String = "dog" # "dog" or "cat"
+@export var species: String = "dog" # "dog", "cat", "rabbit", "panda" or "fox"
 @export var body_color: Color = Color("3b82f6")
 @export var dir: int = 1
 @export var player_id: String = "p1"
@@ -121,7 +121,13 @@ func _draw() -> void:
 	var dark := display_color.darkened(0.3)
 
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(0, 3), 18, 5), Color(0, 0, 0, 0.25))
-	_draw_tail(dark)
+	match species:
+		"rabbit":
+			_draw_round_tail()
+		"fox":
+			_draw_fox_tail(dark)
+		_:
+			_draw_swoosh_tail(dark)
 
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-7 * dir, 0), 6, 5), dark)
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(7 * dir, 0), 6, 5), dark)
@@ -134,14 +140,23 @@ func _draw() -> void:
 
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(2 * dir, -9), 9, 8), Color(1, 1, 1, 0.55))
 
-	if species == "dog":
-		_draw_dog_ears(dark)
-	else:
-		_draw_cat_ears(dark)
+	match species:
+		"cat":
+			_draw_cat_ears(dark)
+		"rabbit":
+			_draw_rabbit_ears(dark)
+		"panda":
+			_draw_panda_ears()
+		"fox":
+			_draw_fox_ears(dark)
+		_:
+			_draw_dog_ears(dark)
 
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(10 * dir, -11), 6, 5), light)
 	draw_circle(Vector2(14 * dir, -12), 1.6, Color.BLACK)
 
+	if species == "panda":
+		draw_colored_polygon(DrawUtils.ellipse_points(Vector2(6 * dir, -18), 6.5, 6.5), Color(0.08, 0.08, 0.08))
 	draw_circle(Vector2(6 * dir, -18), 4.5, Color.WHITE)
 	if down:
 		var ex := 6.0 * dir
@@ -156,11 +171,21 @@ func _draw() -> void:
 
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 
-func _draw_tail(dark: Color) -> void:
+func _draw_swoosh_tail(dark: Color) -> void:
 	var p0 := Vector2(-14 * dir, -6)
 	var ctrl := Vector2(-26 * dir, -2)
 	var p1 := Vector2(-22 * dir, -20)
 	draw_polyline(DrawUtils.quad_bezier_points(p0, ctrl, p1, 12), dark, 6.0, true)
+
+func _draw_round_tail() -> void:
+	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-17 * dir, -6), 5, 5), Color(1, 1, 1, 0.9))
+
+func _draw_fox_tail(dark: Color) -> void:
+	var pts := PackedVector2Array([
+		Vector2(-12 * dir, -10), Vector2(-32 * dir, -16), Vector2(-27 * dir, 4), Vector2(-14 * dir, 1)
+	])
+	draw_colored_polygon(pts, dark)
+	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-29 * dir, -8), 5, 5), Color(1, 1, 1, 0.85))
 
 func _draw_dog_ears(dark: Color) -> void:
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-11 * dir, -24), 6, 10, -0.3 * dir), dark)
@@ -172,6 +197,25 @@ func _draw_cat_ears(dark: Color) -> void:
 	]), dark)
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(3 * dir, -22), Vector2(8 * dir, -34), Vector2(14 * dir, -22)
+	]), dark)
+
+func _draw_rabbit_ears(dark: Color) -> void:
+	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-6 * dir, -32), 4, 15, -0.12 * dir), dark)
+	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(6 * dir, -32), 4, 15, 0.12 * dir), dark)
+	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-6 * dir, -32), 2, 11, -0.12 * dir), Color(1, 1, 1, 0.5))
+	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(6 * dir, -32), 2, 11, 0.12 * dir), Color(1, 1, 1, 0.5))
+
+func _draw_panda_ears() -> void:
+	var black := Color(0.08, 0.08, 0.08)
+	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-12 * dir, -26), 7, 7), black)
+	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(12 * dir, -26), 7, 7), black)
+
+func _draw_fox_ears(dark: Color) -> void:
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-15 * dir, -19), Vector2(-9 * dir, -33), Vector2(-2 * dir, -20)
+	]), dark)
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(2 * dir, -20), Vector2(9 * dir, -33), Vector2(15 * dir, -19)
 	]), dark)
 
 func _draw_weapon(body_xform: Transform2D) -> void:

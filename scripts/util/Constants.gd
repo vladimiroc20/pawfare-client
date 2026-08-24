@@ -28,7 +28,8 @@ const PLAYER_COLORS := [
 	Color("22c55e"),
 	Color("eab308"),
 ]
-const PLAYER_SPECIES := ["dog", "cat", "dog", "cat"]
+const PLAYER_SPECIES := ["dog", "cat", "rabbit", "fox"]
+const AVAILABLE_SPECIES := ["dog", "cat", "rabbit", "panda", "fox"]
 const PLAYER_LABELS := ["Jugador 1 🔵", "Jugador 2 🔴", "Jugador 3 🟢", "Jugador 4 🟡"]
 
 const ROCK_SIZES := [
