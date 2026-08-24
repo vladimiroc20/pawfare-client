@@ -6,6 +6,7 @@ const PlayerScene := preload("res://scenes/characters/Player.tscn")
 
 @export_range(2, 4) var player_count: int = 2
 @export var biome_id: String = "" # vacío = aleatorio cada partida
+@export var is_team_mode: bool = false # solo válido con player_count == 4
 
 @onready var background: Background = $Background
 @onready var terrain: Terrain = $Terrain
@@ -23,6 +24,7 @@ var wind: float = 0.0
 var game_over: bool = false
 var projectile: Projectile = null
 var current_biome: Dictionary = Biomes.LIST[0]
+var elimination_order: Array[String] = []
 
 var drag_active: bool = false
 var drag_cur: Vector2 = Vector2.ZERO
@@ -33,6 +35,7 @@ func _ready() -> void:
 	if GameConfig.configured:
 		player_count = GameConfig.player_count
 		biome_id = GameConfig.biome_id
+		is_team_mode = GameConfig.team_mode
 
 	hud.restart_pressed.connect(new_game)
 	hud.menu_pressed.connect(_on_menu_pressed)
@@ -53,15 +56,16 @@ func new_game() -> void:
 	game_over = false
 	drag_active = false
 	aim_overlay.active = false
+	elimination_order.clear()
 	_clear_projectile()
 	effects.clear()
 
 	_roll_wind()
 	hud.set_biome_text(str(current_biome.icon, " ", current_biome.name))
-	hud.setup_players(_player_ids(), _player_colors(), _player_labels())
+	hud.setup_players(_player_ids(), _player_colors(), _player_labels(), _player_teams())
 	for p in players:
 		hud.set_health(p.player_id, p.health)
-	hud.set_winner("")
+	hud.hide_podium()
 	hud.show_restart(false)
 	hud.set_hint(DEFAULT_HINT)
 	_update_turn_label()
@@ -76,12 +80,22 @@ func _player_labels() -> Array:
 	var n := players.size()
 	return Constants.PLAYER_LABELS.slice(0, n)
 
+func _player_teams() -> Array:
+	return players.map(func(p): return p.team)
+
+func _label_map() -> Dictionary:
+	var map := {}
+	for i in players.size():
+		map[players[i].player_id] = Constants.PLAYER_LABELS[i % Constants.PLAYER_LABELS.size()]
+	return map
+
 func _spawn_players() -> void:
 	for p in players:
 		p.queue_free()
 	players.clear()
 
 	var n := clampi(player_count, Constants.MIN_PLAYERS, Constants.MAX_PLAYERS)
+	var team_mode_active := is_team_mode and n == 4
 	var margin := 90.0
 	for i in n:
 		var t := float(i) / float(n - 1) if n > 1 else 0.0
@@ -94,7 +108,9 @@ func _spawn_players() -> void:
 		player.body_color = Constants.PLAYER_COLORS[i % Constants.PLAYER_COLORS.size()]
 		player.dir = 1 if x < Constants.SCREEN_W * 0.5 else -1
 		player.terrain = terrain
+		player.team = (i % 2) if team_mode_active else -1
 		player.reset(x)
+		player.eliminated.connect(_on_player_eliminated.bind(player))
 
 		players.append(player)
 
@@ -122,6 +138,10 @@ func _generate_obstacles() -> void:
 
 func current_player() -> Player:
 	return players[current_turn_index]
+
+func _on_player_eliminated(p: Player) -> void:
+	elimination_order.append(p.player_id)
+	effects.spawn_ko_burst(p.position.x, p.anchor().y)
 
 func _roll_wind() -> void:
 	wind = (randf() * 2.0 - 1.0) * 1.6 * float(current_biome.get("wind_scale", 1.0))
@@ -262,14 +282,9 @@ func _damage_obstacle(rock: Rock, hit_pos: Vector2) -> void:
 		rock.queue_free()
 
 func _end_turn_check() -> void:
-	var alive: Array[Player] = players.filter(func(p): return p.health > 0.0)
-	if alive.size() <= 1:
+	if _is_match_over():
 		game_over = true
-		if alive.is_empty():
-			hud.set_winner("🏳️ Empate")
-		else:
-			var winner_index := players.find(alive[0])
-			hud.set_winner("🏆 ¡" + Constants.PLAYER_LABELS[winner_index % Constants.PLAYER_LABELS.size()] + " gana!")
+		hud.show_podium(_build_ranking(), _label_map())
 		hud.show_restart(true)
 		hud.set_hint("")
 		return
@@ -283,3 +298,45 @@ func _end_turn_check() -> void:
 	_roll_wind()
 	_update_turn_label()
 	hud.set_hint(DEFAULT_HINT)
+
+func _is_match_over() -> bool:
+	var team_mode_active := is_team_mode and players.size() == 4
+	if team_mode_active:
+		var team_a_alive := players.any(func(p): return p.team == 0 and p.health > 0.0)
+		var team_b_alive := players.any(func(p): return p.team == 1 and p.health > 0.0)
+		return not (team_a_alive and team_b_alive)
+	var alive := players.filter(func(p): return p.health > 0.0)
+	return alive.size() <= 1
+
+func _build_ranking() -> Array:
+	var team_mode_active := is_team_mode and players.size() == 4
+	if team_mode_active:
+		return _build_team_ranking()
+	return _build_ffa_ranking()
+
+func _build_ffa_ranking() -> Array:
+	var ranking: Array = []
+	var alive := players.filter(func(p): return p.health > 0.0)
+	var place := 1
+	if alive.size() == 1:
+		ranking.append({"place": place, "ids": [alive[0].player_id]})
+		place += 1
+	var order := elimination_order.duplicate()
+	order.reverse()
+	for id in order:
+		ranking.append({"place": place, "ids": [id]})
+		place += 1
+	return ranking
+
+func _build_team_ranking() -> Array:
+	var team_a_alive := players.any(func(p): return p.team == 0 and p.health > 0.0)
+	var team_b_alive := players.any(func(p): return p.team == 1 and p.health > 0.0)
+	if team_a_alive == team_b_alive:
+		return []
+	var winning_team := 0 if team_a_alive else 1
+	var winners := players.filter(func(p): return p.team == winning_team)
+	var losers := players.filter(func(p): return p.team != winning_team)
+	return [
+		{"place": 1, "ids": winners.map(func(p): return p.player_id)},
+		{"place": 2, "ids": losers.map(func(p): return p.player_id)},
+	]

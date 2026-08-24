@@ -1,11 +1,14 @@
 extends SceneTree
 
 func _initialize() -> void:
+	seed(1)
 	_run_case(2)
 	_run_case(4)
 	for biome in Biomes.LIST:
 		_run_biome_case(biome.id)
-	print("smoke test OK — jugadores (2/4), rotación de turno y todos los biomas cargan sin errores")
+	_run_elimination_case()
+	_run_team_mode_case()
+	print("smoke test OK — jugadores (2/4), biomas, eliminación/podio y modo equipos funcionan")
 	quit()
 
 func _run_case(n: int) -> void:
@@ -42,11 +45,50 @@ func _run_biome_case(biome_id: String) -> void:
 	assert(main.background.is_night == biome.is_night)
 	main.queue_free()
 
-func _spawn_main(n: int, biome_id: String) -> Node:
+func _run_elimination_case() -> void:
+	var main := _spawn_main(2, "backyard")
+	var loser: Player = main.players[1]
+
+	loser.take_damage(1000.0)
+	assert(loser.is_down())
+	assert(main.elimination_order.has("p2"))
+
+	main._end_turn_check()
+	assert(main.game_over)
+
+	var ranking: Array = main._build_ranking()
+	assert(ranking.size() == 2)
+	assert(ranking[0].ids == ["p1"])
+	assert(ranking[1].ids == ["p2"])
+
+	main.queue_free()
+
+func _run_team_mode_case() -> void:
+	var main := _spawn_main(4, "backyard", true)
+
+	assert(main.players[0].team == 0)
+	assert(main.players[1].team == 1)
+	assert(main.players[2].team == 0)
+	assert(main.players[3].team == 1)
+
+	main.players[0].take_damage(1000.0)
+	main.players[2].take_damage(1000.0)
+	main._end_turn_check()
+	assert(main.game_over)
+
+	var ranking: Array = main._build_ranking()
+	assert(ranking.size() == 2)
+	assert(ranking[0].ids.has("p2") and ranking[0].ids.has("p4"))
+	assert(ranking[1].ids.has("p1") and ranking[1].ids.has("p3"))
+
+	main.queue_free()
+
+func _spawn_main(n: int, biome_id: String, team_mode: bool = false) -> Node:
 	var main_scene: PackedScene = load("res://scenes/main/Main.tscn")
 	var main: Node = main_scene.instantiate()
 	main.player_count = n
 	main.biome_id = biome_id
+	main.is_team_mode = team_mode
 	root.add_child(main)
 	main.propagate_call("_ready")
 	return main

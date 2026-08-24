@@ -29,7 +29,7 @@ pawfare-client/
 │   ├── weapons/Projectile.gd # integración de física por tick
 │   ├── effects/Effects.gd    # explosión + escombros
 │   ├── world/Background.gd, AimOverlay.gd, Biomes.gd (tabla de biomas)
-│   ├── ui/Hud.gd
+│   ├── ui/Hud.gd, UiTheme.gd (tema visual compartido menú+HUD)
 │   ├── util/Constants.gd, DrawUtils.gd
 │   └── dev/smoke_test.gd     # test de regresión headless, ver más abajo
 ├── assets/
@@ -48,7 +48,7 @@ Todo el arte (personajes, rocas, nubes, terreno) se dibuja por código en `_draw
 - Arte placeholder actual: ninguno todavía. No hay "arte final" definido (ver sección 9 del maestro) — no asumir dirección de arte sin confirmar.
 - Build Android: `godot --headless --export-release "Android" build/pawfare.apk` (aún faltan presets de exportación configurados en el editor).
 - Godot 4.5 está instalado vía snap (`snap run godot4`). Abrir el editor: `snap run godot4 --path .`
-- Test de regresión headless (no requiere abrir el editor): `snap run godot4 --headless --path . --script res://scripts/dev/smoke_test.gd` — simula un disparo completo (arrastre, física, cráter, daño, cambio de turno) y falla con `assert` si algo se rompe. Nota: usa `propagate_call("_ready")` en vez de dejar que el motor dispare `_ready` porque el harness de `--script` no corre el bucle normal del engine; esto es solo para el arnés de pruebas, el juego real (`--path .` sin `--script`, o el editor) no necesita este truco.
+- Test de regresión headless (no requiere abrir el editor): `snap run godot4 --headless --path . --script res://scripts/dev/smoke_test.gd` — simula un disparo completo (arrastre, física, cráter, daño, cambio de turno), los 5 biomas, eliminación/podio y el modo equipos, y falla con `assert` si algo se rompe. Usa `seed(1)` al inicio para ser determinista (el terreno/rocas son aleatorios). Nota: usa `propagate_call("_ready")` en vez de dejar que el motor dispare `_ready` porque el harness de `--script` no corre el bucle normal del engine; esto es solo para el arnés de pruebas, el juego real (`--path .` sin `--script`, o el editor) no necesita este truco.
 
 ## Estado actual
 
@@ -65,4 +65,10 @@ Todo el arte (personajes, rocas, nubes, terreno) se dibuja por código en `_draw
 
 **Menú principal mínimo:** `MainMenu.tscn` es ahora la escena de arranque del proyecto (`run/main_scene`). Deja elegir cantidad de jugadores (2-4) y mapa (aleatorio o uno fijo de los 5 biomas), y al presionar "Jugar" guarda esa elección en el autoload `GameConfig` (`scripts/autoload/GameConfig.gd`) antes de cambiar a `Main.tscn`. `Main.gd` solo sobreescribe sus `@export` (`player_count`, `biome_id`) desde `GameConfig` si `GameConfig.configured` es `true` — así probar `Main.tscn` directo en el editor (F6) sigue funcionando con sus valores por defecto, sin pasar por el menú. Desde la pantalla de fin de partida hay botones para revancha (misma configuración) o volver al menú. No hay pantalla de "Opciones" todavía — no tiene sentido hasta que exista algo real que configurar (audio, etc.), y el lobby real (crear/unirse a sala) se construye en la Fase 3 contra el servidor, no antes.
 
-**Próximo hito:** Fase 3 — servidor `pawfare-server` con salas Colyseus de 2 a 4 jugadores, bot de respaldo si alguien se desconecta, y reconexión. El modelo de N jugadores, biomas y el menú del cliente ya están listos para que el servidor solo tenga que sincronizar `players`, turno activo, bioma elegido y terreno — no requiere otro rediseño del lado del cliente para soportarlo.
+**Eliminación, podio y modo equipos (2 vs 2):** cuando la vida de un jugador llega a 0, `Player.gd` emite la señal `eliminated` una sola vez (guardia `was_alive` en `take_damage`), se dibuja tumbado (rotado 90°, colores desaturados, ojos en X, sin arma) y `Effects.spawn_ko_burst` dispara un anillo dorado + chispas en su posición. `Main.gd` registra el orden de eliminación (`elimination_order`) y, al terminar la partida, `Hud.show_podium()` reemplazó el antiguo texto plano de ganador por un panel con medallas (🥇🥈🥉) construido dinámicamente. El ranking es consciente del modo: en "todos contra todos" es por orden de eliminación inverso; en equipos, ambos integrantes del equipo ganador quedan en 1er lugar sin importar quién cayó primero (`_build_ffa_ranking` / `_build_team_ranking` en `Main.gd`).
+
+Modo equipos: solo disponible con 4 jugadores (2 y 3 jugadores siempre son todos-contra-todos). El menú muestra el selector "Modo" únicamente cuando se eligen 4 jugadores. El equipo se asigna por paridad de índice en el orden de turno (`player.team = i % 2`), lo cual además hace que los turnos alternen equipo A/B automáticamente sin lógica extra de rotación. Hay fuego amigo: el daño de explosión no distingue equipo (mismo código de siempre), como es estándar en el género.
+
+**Tema visual compartido:** `scripts/ui/UiTheme.gd` construye un `Theme` en código (paneles oscuros redondeados, botones índigo con estados hover/pressed, barras de progreso con fondo translúcido) aplicado tanto en `MainMenu` como en `Hud` — antes usaban los controles grises por defecto de Godot. Sigue siendo 100% código, sin assets, consistente con el resto del proyecto.
+
+**Próximo hito:** Fase 3 — servidor `pawfare-server` con salas Colyseus de 2 a 4 jugadores, bot de respaldo si alguien se desconecta, y reconexión. El modelo de N jugadores, equipos, biomas y el menú del cliente ya están listos para que el servidor solo tenga que sincronizar `players`, turno activo, bioma elegido y terreno — no requiere otro rediseño del lado del cliente para soportarlo.

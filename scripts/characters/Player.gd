@@ -1,12 +1,15 @@
 extends Node2D
 class_name Player
 
+signal eliminated
+
 @export var species: String = "dog" # "dog" or "cat"
 @export var body_color: Color = Color("3b82f6")
 @export var dir: int = 1
 @export var player_id: String = "p1"
 
 var terrain: Terrain
+var team: int = -1 # -1 = sin equipo (todos contra todos), 0/1 = equipo A/B
 
 var health: float = 100.0
 var knock_vx: float = 0.0
@@ -39,8 +42,14 @@ func anchor() -> Vector2:
 func trigger_recoil() -> void:
 	recoil = 1.0
 
+func is_down() -> bool:
+	return health <= 0.0
+
 func take_damage(amount: float) -> void:
+	var was_alive := health > 0.0
 	health = maxf(0.0, health - amount)
+	if was_alive and health <= 0.0:
+		eliminated.emit()
 
 func apply_knockback(from: Vector2) -> void:
 	if health <= 0.0:
@@ -92,19 +101,23 @@ func _weapon_angle() -> float:
 	return (-0.5 * dir) + sin(_anim_time * 0.015 + _phase) * 0.045
 
 func _draw() -> void:
-	var bob := sin(_anim_time * 0.02 + _phase) * 1.6
+	var down := is_down()
+	var bob := 0.0 if down else sin(_anim_time * 0.02 + _phase) * 1.6
 	var kick := recoil * 6.0 * -dir
 	var squash := 1.0 - recoil * 0.12
 	var body_scale := Vector2(1.0 + recoil * 0.08, squash)
 	var rot := knock_vx * 0.03 if airborne else 0.0
+	if down:
+		rot = deg_to_rad(90.0) * dir
 
 	var body_xform := Transform2D(rot, Vector2(kick, bob))
 	body_xform.x *= body_scale.x
 	body_xform.y *= body_scale.y
 	draw_set_transform_matrix(body_xform)
 
-	var light := body_color.lightened(0.3)
-	var dark := body_color.darkened(0.3)
+	var display_color := body_color.lerp(Color(0.55, 0.55, 0.58), 0.75) if down else body_color
+	var light := display_color.lightened(0.3)
+	var dark := display_color.darkened(0.3)
 
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(0, 3), 18, 5), Color(0, 0, 0, 0.25))
 	_draw_tail(dark)
@@ -112,7 +125,7 @@ func _draw() -> void:
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-7 * dir, 0), 6, 5), dark)
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(7 * dir, 0), 6, 5), dark)
 
-	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(0, -14), 17, 16), body_color)
+	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(0, -14), 17, 16), display_color)
 	draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-4 * dir, -20), 10, 9), Color(light.r, light.g, light.b, 0.5))
 	var outline := DrawUtils.ellipse_points(Vector2(0, -14), 17, 16)
 	outline.append(outline[0])
@@ -129,9 +142,16 @@ func _draw() -> void:
 	draw_circle(Vector2(14 * dir, -12), 1.6, Color.BLACK)
 
 	draw_circle(Vector2(6 * dir, -18), 4.5, Color.WHITE)
-	draw_circle(Vector2(7.5 * dir, -18), 2.3, Color(0.067, 0.067, 0.067))
+	if down:
+		var ex := 6.0 * dir
+		var ey := -18.0
+		draw_line(Vector2(ex - 2.3, ey - 2.3), Vector2(ex + 2.3, ey + 2.3), Color(0.067, 0.067, 0.067), 1.6)
+		draw_line(Vector2(ex - 2.3, ey + 2.3), Vector2(ex + 2.3, ey - 2.3), Color(0.067, 0.067, 0.067), 1.6)
+	else:
+		draw_circle(Vector2(7.5 * dir, -18), 2.3, Color(0.067, 0.067, 0.067))
 
-	_draw_weapon(body_xform)
+	if not down:
+		_draw_weapon(body_xform)
 
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 
