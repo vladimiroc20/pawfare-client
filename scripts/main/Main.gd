@@ -238,6 +238,7 @@ func _spawn_projectile(from: Vector2, velocity: Vector2, weapon: Dictionary) -> 
 	projectile.position = from
 	projectile.velocity = velocity
 	projectile.bounces_left = int(weapon.bounces)
+	projectile.weapon_id = String(weapon.id)
 
 func _clear_projectile() -> void:
 	if projectile != null:

@@ -15,8 +15,8 @@ const LIST := [
 	},
 	{
 		"id": "cluster",
-		"name": "Racimo",
-		"icon": "💥",
+		"name": "Granada Racimo",
+		"icon": "💣",
 		"explosion_radius": 18.0,
 		"damage": 8.0,
 		"bounces": 0,
@@ -26,8 +26,8 @@ const LIST := [
 	},
 	{
 		"id": "bouncer",
-		"name": "Rebote",
-		"icon": "🎾",
+		"name": "Granada Rebotante",
+		"icon": "🟢",
 		"explosion_radius": 30.0,
 		"damage": 20.0,
 		"bounces": 1,
