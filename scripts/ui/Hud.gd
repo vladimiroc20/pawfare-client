@@ -37,11 +37,29 @@ func _setup_weapons() -> void:
 	for w in Weapons.LIST:
 		var btn := Button.new()
 		btn.text = str(w.icon, " ", w.name)
+		btn.add_theme_font_size_override("font_size", 14)
+		btn.add_theme_constant_override("outline_size", 1)
+		btn.add_theme_stylebox_override("normal", _tight_weapon_style(UiTheme.PRIMARY))
+		btn.add_theme_stylebox_override("hover", _tight_weapon_style(UiTheme.PRIMARY_HOVER))
+		btn.add_theme_stylebox_override("pressed", _tight_weapon_style(UiTheme.PRIMARY_PRESSED))
+		btn.add_theme_stylebox_override("focus", _tight_weapon_style(UiTheme.PRIMARY_HOVER))
 		btn.toggle_mode = true
 		btn.button_pressed = w.id == selected_weapon_id
 		btn.pressed.connect(func(): _on_weapon_button_pressed(w.id))
 		weapon_row.add_child(btn)
 		_weapon_buttons[w.id] = btn
+
+func _tight_weapon_style(bg: Color) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = bg
+	s.set_corner_radius_all(12)
+	s.set_border_width_all(3)
+	s.border_color = UiTheme.OUTLINE
+	s.content_margin_left = 10.0
+	s.content_margin_right = 10.0
+	s.content_margin_top = 6.0
+	s.content_margin_bottom = 6.0
+	return s
 
 func _on_weapon_button_pressed(weapon_id: String) -> void:
 	Sfx.play("ui_click")

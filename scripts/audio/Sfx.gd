@@ -2,13 +2,31 @@ extends Node
 
 const MIX_RATE := 44100
 const POOL_SIZE := 8
+const SETTINGS_PATH := "user://settings.cfg"
 
 var _cache: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
 var _next_player := 0
+var master_volume: float = 1.0 # 0.0 (silencio) a 1.0 (volumen normal)
 
 func _ready() -> void:
 	_ensure_players()
+	_load_settings()
+
+func set_master_volume(v: float) -> void:
+	master_volume = clampf(v, 0.0, 1.0)
+	_save_settings()
+
+func _load_settings() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(SETTINGS_PATH) == OK:
+		master_volume = clampf(cfg.get_value("audio", "master_volume", 1.0), 0.0, 1.0)
+
+func _save_settings() -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(SETTINGS_PATH) # conserva otras secciones si algún día hay más ajustes
+	cfg.set_value("audio", "master_volume", master_volume)
+	cfg.save(SETTINGS_PATH)
 
 func _ensure_players() -> void:
 	# El arnés de pruebas `--script` no dispara `_ready()` en autoloads (no corre
@@ -26,13 +44,15 @@ func play(sound_name: String, volume_db: float = 0.0, pitch_scale: float = 1.0, 
 		# El arnés de pruebas `--script` no boota los autoloads en el árbol real;
 		# en el juego real (editor o build) esto siempre es true.
 		return
+	if master_volume <= 0.001:
+		return
 	var stream := _get_stream(sound_name)
 	if stream == null:
 		return
 	var player := _players[_next_player]
 	_next_player = (_next_player + 1) % _players.size()
 	player.stream = stream
-	player.volume_db = volume_db
+	player.volume_db = volume_db + linear_to_db(master_volume)
 	player.pitch_scale = pitch_scale + randf_range(-jitter, jitter)
 	player.play()
 

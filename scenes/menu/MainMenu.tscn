@@ -30,96 +30,49 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Panel" type="PanelContainer" parent="UI/Root/Center"]
+[node name="VBox" type="VBoxContainer" parent="UI/Root/Center"]
 layout_mode = 2
-
-[node name="Margin" type="MarginContainer" parent="UI/Root/Center/Panel"]
-layout_mode = 2
-theme_override_constants/margin_left = 28
-theme_override_constants/margin_top = 22
-theme_override_constants/margin_right = 28
-theme_override_constants/margin_bottom = 22
-
-[node name="VBox" type="VBoxContainer" parent="UI/Root/Center/Panel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 18
 alignment = 1
 
-[node name="Title" type="Label" parent="UI/Root/Center/Panel/Margin/VBox"]
+[node name="Title" type="Label" parent="UI/Root/Center/VBox"]
 layout_mode = 2
+theme_type_variation = &"TitleLabel"
 horizontal_alignment = 1
 text = "🐾 PAWFARE"
-theme_override_font_sizes/font_size = 34
 
-[node name="Subtitle" type="Label" parent="UI/Root/Center/Panel/Margin/VBox"]
+[node name="Subtitle" type="Label" parent="UI/Root/Center/VBox"]
 layout_mode = 2
+theme_type_variation = &"SkyLabel"
 horizontal_alignment = 1
 text = "Artillería por turnos con mascotas tiernas"
-theme_override_font_sizes/font_size = 13
 
-[node name="PlayerCountRow" type="HBoxContainer" parent="UI/Root/Center/Panel/Margin/VBox"]
+[node name="PlaySpacer" type="Control" parent="UI/Root/Center/VBox"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 14)
+
+[node name="PlayButton" type="Button" parent="UI/Root/Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(280, 76)
+theme_override_font_sizes/font_size = 30
+text = "▶  JUGAR"
+
+[node name="ActionRow" type="HBoxContainer" parent="UI/Root/Center/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
 alignment = 1
-theme_override_constants/separation = 10
+theme_override_constants/separation = 16
 
-[node name="Label" type="Label" parent="UI/Root/Center/Panel/Margin/VBox/PlayerCountRow"]
-layout_mode = 2
-text = "Jugadores"
-
-[node name="PlayerCountOption" type="OptionButton" parent="UI/Root/Center/Panel/Margin/VBox/PlayerCountRow"]
+[node name="ShopButton" type="Button" parent="UI/Root/Center/VBox/ActionRow"]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(140, 0)
+theme_type_variation = &"SecondaryButton"
+text = "🛒 Tienda"
 
-[node name="BiomeRow" type="HBoxContainer" parent="UI/Root/Center/Panel/Margin/VBox"]
-layout_mode = 2
-alignment = 1
-theme_override_constants/separation = 10
-
-[node name="Label" type="Label" parent="UI/Root/Center/Panel/Margin/VBox/BiomeRow"]
-layout_mode = 2
-text = "Mapa"
-
-[node name="BiomeOption" type="OptionButton" parent="UI/Root/Center/Panel/Margin/VBox/BiomeRow"]
+[node name="SettingsButton" type="Button" parent="UI/Root/Center/VBox/ActionRow"]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(180, 0)
-
-[node name="ModeRow" type="HBoxContainer" parent="UI/Root/Center/Panel/Margin/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-alignment = 1
-theme_override_constants/separation = 10
-
-[node name="Label" type="Label" parent="UI/Root/Center/Panel/Margin/VBox/ModeRow"]
-layout_mode = 2
-text = "Modo"
-
-[node name="ModeOption" type="OptionButton" parent="UI/Root/Center/Panel/Margin/VBox/ModeRow"]
-unique_name_in_owner = true
-layout_mode = 2
-custom_minimum_size = Vector2(180, 0)
-
-[node name="ButtonRow" type="HBoxContainer" parent="UI/Root/Center/Panel/Margin/VBox"]
-layout_mode = 2
-alignment = 1
-theme_override_constants/separation = 10
-
-[node name="PlayButton" type="Button" parent="UI/Root/Center/Panel/Margin/VBox/ButtonRow"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "▶ Jugar local"
-
-[node name="OnlineButton" type="Button" parent="UI/Root/Center/Panel/Margin/VBox/ButtonRow"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "🌐 Jugar online"
-
-[node name="StatusLabel" type="Label" parent="UI/Root/Center/Panel/Margin/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-horizontal_alignment = 1
-text = ""
-theme_override_font_sizes/font_size = 12
+theme_type_variation = &"SecondaryButton"
+text = "⚙ Configuración"
