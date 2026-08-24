@@ -53,12 +53,14 @@ func _selected_team_mode() -> bool:
 	return mode_row.visible and mode_option.get_item_id(mode_option.selected) == 1
 
 func _on_play_pressed() -> void:
+	Sfx.play("ui_click")
 	var count: int = player_count_option.get_item_id(player_count_option.selected)
 	GameConfig.configure(count, _selected_biome_id(), _selected_team_mode())
 	GameConfig.character_select_mode = "local"
 	get_tree().change_scene_to_file("res://scenes/menu/CharacterSelect.tscn")
 
 func _on_online_pressed() -> void:
+	Sfx.play("ui_click")
 	var count: int = player_count_option.get_item_id(player_count_option.selected)
 	play_button.disabled = true
 	online_button.disabled = true

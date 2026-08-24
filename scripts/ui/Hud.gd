@@ -26,8 +26,8 @@ var selected_weapon_id: String = Weapons.DEFAULT_ID
 
 func _ready() -> void:
 	root.theme = UiTheme.build()
-	restart_button.pressed.connect(func(): restart_pressed.emit())
-	menu_button.pressed.connect(func(): menu_pressed.emit())
+	restart_button.pressed.connect(func(): Sfx.play("ui_click"); restart_pressed.emit())
+	menu_button.pressed.connect(func(): Sfx.play("ui_click"); menu_pressed.emit())
 	restart_button.visible = false
 	menu_button.visible = false
 	podium_panel.visible = false
@@ -44,6 +44,7 @@ func _setup_weapons() -> void:
 		_weapon_buttons[w.id] = btn
 
 func _on_weapon_button_pressed(weapon_id: String) -> void:
+	Sfx.play("ui_click")
 	selected_weapon_id = weapon_id
 	for id in _weapon_buttons:
 		_weapon_buttons[id].button_pressed = id == weapon_id

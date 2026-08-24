@@ -152,6 +152,7 @@ func current_player() -> Player:
 func _on_player_eliminated(p: Player) -> void:
 	elimination_order.append(p.player_id)
 	effects.spawn_ko_burst(p.position.x, p.anchor().y)
+	Sfx.play("eliminated")
 
 func _roll_wind() -> void:
 	wind = (randf() * 2.0 - 1.0) * 1.6 * float(current_biome.get("wind_scale", 1.0))
@@ -229,8 +230,20 @@ func _on_pointer_up() -> void:
 		return
 
 	p.trigger_recoil()
+	Sfx.play("shoot", 0.0, _weapon_shoot_pitch(active_weapon))
 	_spawn_projectile(anchor, Vector2(-delta.x, -delta.y) * Constants.POWER_SCALE, active_weapon)
 	hud.set_hint("")
+
+func _weapon_shoot_pitch(weapon: Dictionary) -> float:
+	match String(weapon.id):
+		"cluster":
+			return 1.15
+		"bouncer":
+			return 0.95
+		"piercer":
+			return 1.3
+		_:
+			return 1.0
 
 func _spawn_projectile(from: Vector2, velocity: Vector2, weapon: Dictionary) -> void:
 	current_shot_weapon = weapon
@@ -276,6 +289,7 @@ func _physics_process(_delta: float) -> void:
 		projectile.position.y = terrain.height_at(projectile.position.x) - 1.0
 		projectile.velocity.y = -projectile.velocity.y * 0.55
 		projectile.velocity.x *= 0.85
+		Sfx.play("bounce")
 		return
 
 	if hit_ground and not hit_other and hit_obstacle == null and projectile.tunnel_ticks_left > 0:
@@ -333,9 +347,11 @@ func _trigger_explosion(pos: Vector2, explosion_radius: float, damage: float) ->
 		p.apply_knockback(pos, explosion_radius, damage)
 		hud.set_health(p.player_id, p.health)
 	effects.spawn_explosion(pos.x, pos.y)
+	Sfx.play("explosion", 0.0, clampf(explosion_radius / 36.0, 0.8, 1.2))
 
 func _damage_obstacle(rock: Rock, hit_pos: Vector2) -> void:
 	var destroyed := rock.take_hit()
+	Sfx.play("hit", -4.0)
 	effects.spawn_debris(hit_pos.x, hit_pos.y, 5, rock.radius)
 	if destroyed:
 		var count := 8 + int(rock.radius / 3.0)
@@ -349,6 +365,7 @@ func _end_turn_check() -> void:
 		hud.show_podium(_build_ranking(), _label_map())
 		hud.show_restart(true)
 		hud.set_hint("")
+		Sfx.play("victory")
 		return
 
 	var n := players.size()

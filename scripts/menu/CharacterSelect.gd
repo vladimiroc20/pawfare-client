@@ -32,7 +32,7 @@ func _ready() -> void:
 		touched[i] = false
 
 	_build_slots()
-	skip_button.pressed.connect(_finish)
+	skip_button.pressed.connect(func(): Sfx.play("ui_click"); _finish())
 
 func _build_slots() -> void:
 	for i in slot_count:
@@ -76,6 +76,7 @@ func _build_slots() -> void:
 		_refresh_slot(i)
 
 func _cycle(i: int, delta: int) -> void:
+	Sfx.play("ui_click")
 	touched[i] = true
 	chosen_index[i] = (chosen_index[i] + delta + Species.LIST.size()) % Species.LIST.size()
 	_refresh_slot(i)

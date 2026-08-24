@@ -135,6 +135,18 @@ func _start_shot_prediction(shot: Dictionary, final_state: Dictionary) -> void:
 	predicted_projectile.tunnel_ticks_left = int(predicted_weapon.tunnel_ticks)
 	predicted_projectile.gravity_scale = 0.15 if int(predicted_weapon.tunnel_ticks) > 0 else 1.0
 	predicted_projectile.weapon_id = String(predicted_weapon.id)
+	Sfx.play("shoot", 0.0, _weapon_shoot_pitch(predicted_weapon))
+
+func _weapon_shoot_pitch(weapon: Dictionary) -> float:
+	match String(weapon.id):
+		"cluster":
+			return 1.15
+		"bouncer":
+			return 0.95
+		"piercer":
+			return 1.3
+		_:
+			return 1.0
 
 func _physics_process(_delta: float) -> void:
 	if not predicting_shot or predicted_projectile == null:
@@ -169,6 +181,7 @@ func _physics_process(_delta: float) -> void:
 		predicted_projectile.position.y = terrain.height_at(pos.x) - 1.0
 		predicted_projectile.velocity.y = -predicted_projectile.velocity.y * 0.55
 		predicted_projectile.velocity.x *= 0.85
+		Sfx.play("bounce")
 		return
 
 	if hit_ground and not hit_other and not hit_obstacle and predicted_projectile.tunnel_ticks_left > 0:
@@ -178,6 +191,7 @@ func _physics_process(_delta: float) -> void:
 
 	if hit_other or hit_ground or hit_obstacle:
 		effects.spawn_explosion(pos.x, pos.y)
+		Sfx.play("explosion", 0.0, clampf(float(predicted_weapon.explosion_radius) / 36.0, 0.8, 1.2))
 		_finish_shot_prediction()
 	elif out_of_bounds or prediction_ticks > MAX_PREDICTION_TICKS:
 		_finish_shot_prediction()
@@ -203,6 +217,7 @@ func _spawn_impact_fx_if_changed(new_heights: Array) -> void:
 			max_idx = i
 	if max_idx != -1 and max_delta > 1.0:
 		effects.spawn_explosion(max_idx * Constants.TERRAIN_RES, new_heights[max_idx])
+		Sfx.play("explosion")
 
 func _sync_obstacles(obstacles_data: Array) -> void:
 	if obstacles_data.size() != rock_nodes.size():
@@ -256,6 +271,7 @@ func _sync_players(players_data: Array) -> void:
 		node.health = p.health
 		if was_alive and p.health <= 0.0:
 			effects.spawn_ko_burst(node.position.x, node.anchor().y)
+			Sfx.play("eliminated")
 		last_health[p.id] = p.health
 
 		hud.set_health(p.id, p.health)
@@ -287,6 +303,7 @@ func _show_podium(state: Dictionary) -> void:
 	var ranking: Array = state.ranking if state.ranking != null else []
 	hud.show_podium(ranking, labels)
 	hud.show_restart(true)
+	Sfx.play("victory")
 
 func _my_turn() -> bool:
 	if last_state.is_empty() or last_state.phase != "playing":
