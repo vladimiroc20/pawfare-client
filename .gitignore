@@ -7,3 +7,6 @@ export.cfg
 # Import cache for local paths
 .mono/
 data_*/
+
+# Builds exportados (se regeneran con export_presets.cfg, no se versionan)
+build/
