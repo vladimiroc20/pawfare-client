@@ -1,0 +1,9 @@
+# Godot 4 generated/local files
+.godot/
+.import/
+export.cfg
+*.translation
+
+# Import cache for local paths
+.mono/
+data_*/

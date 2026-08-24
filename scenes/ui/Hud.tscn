@@ -1,0 +1,107 @@
+[gd_scene load_steps=2 format=3 uid="uid://dv4h3q1n8s2ab"]
+
+[ext_resource type="Script" path="res://scripts/ui/Hud.gd" id="1"]
+
+[node name="Hud" type="CanvasLayer"]
+script = ExtResource("1")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Root/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="HealthRow" type="HBoxContainer" parent="Root/Margin/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="P1Box" type="VBoxContainer" parent="Root/Margin/VBox/HealthRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="P1Label" type="Label" parent="Root/Margin/VBox/HealthRow/P1Box"]
+layout_mode = 2
+text = "🔵 Jugador 1"
+theme_override_font_sizes/font_size = 14
+
+[node name="Hp1Bar" type="ProgressBar" parent="Root/Margin/VBox/HealthRow/P1Box"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="P2Box" type="VBoxContainer" parent="Root/Margin/VBox/HealthRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+mouse_filter = 2
+
+[node name="P2Label" type="Label" parent="Root/Margin/VBox/HealthRow/P2Box"]
+layout_mode = 2
+horizontal_alignment = 2
+text = "Jugador 2 🔴"
+theme_override_font_sizes/font_size = 14
+
+[node name="Hp2Bar" type="ProgressBar" parent="Root/Margin/VBox/HealthRow/P2Box"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="TurnLabel" type="Label" parent="Root/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+text = "Turno de Jugador 1"
+theme_override_font_sizes/font_size = 16
+
+[node name="WindLabel" type="Label" parent="Root/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+text = "💨 Viento: calma"
+theme_override_font_sizes/font_size = 12
+
+[node name="HintLabel" type="Label" parent="Root/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+text = "Toca y arrastra a tu personaje hacia atrás, luego suelta"
+theme_override_font_sizes/font_size = 12
+
+[node name="WinnerLabel" type="Label" parent="Root/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+text = ""
+theme_override_font_sizes/font_size = 20
+
+[node name="RestartButton" type="Button" parent="Root/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "🔄 Jugar de nuevo"
