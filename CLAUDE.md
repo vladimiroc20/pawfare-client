@@ -13,25 +13,29 @@ Estructura real del proyecto:
 ```
 pawfare-client/
 ├── scenes/
-│   ├── menu/MainMenu.tscn     # escena inicial: título, selector de jugadores/mapa, jugar
-│   ├── main/Main.tscn         # partida — orquesta el estado de juego
+│   ├── menu/MainMenu.tscn     # escena inicial: título, selector de jugadores/mapa, jugar local u online
+│   ├── main/Main.tscn         # partida LOCAL — simula todo en el cliente
+│   ├── main/NetworkMain.tscn  # partida ONLINE — renderiza el estado que manda pawfare-server
 │   ├── characters/Player.tscn
 │   ├── obstacles/Rock.tscn
 │   ├── weapons/Projectile.tscn
 │   └── ui/Hud.tscn
 ├── scripts/
-│   ├── autoload/GameConfig.gd # singleton: pasa player_count/biome_id del menú a Main
+│   ├── autoload/GameConfig.gd # singleton: pasa player_count/biome_id/team_mode del menú a Main (local)
+│   ├── net/NetworkClient.gd   # singleton: cliente REST hacia pawfare-server (ver sección de red más abajo)
 │   ├── menu/MainMenu.gd
-│   ├── main/Main.gd          # turnos, input, viento, resolución de explosiones
-│   ├── characters/Player.gd  # cuerpo dibujado por código, arma, knockback
-│   ├── terrain/Terrain.gd    # mapa de alturas, carve_crater, render
+│   ├── main/Main.gd          # LOCAL: turnos, input, viento, resolución de explosiones, todo en el cliente
+│   ├── main/NetworkMain.gd   # ONLINE: sin física propia — solo sincroniza nodos con el estado del servidor
+│   ├── characters/Player.gd  # cuerpo dibujado por código, arma, knockback (usado por ambos modos)
+│   ├── terrain/Terrain.gd    # mapa de alturas, carve_crater, render, set_heights() (para el modo online)
 │   ├── obstacles/Rock.gd     # forma procedural, grietas, destrucción
-│   ├── weapons/Projectile.gd # integración de física por tick
+│   ├── weapons/Projectile.gd # integración de física por tick (solo modo local)
 │   ├── effects/Effects.gd    # explosión + escombros
 │   ├── world/Background.gd, AimOverlay.gd, Biomes.gd (tabla de biomas)
 │   ├── ui/Hud.gd, UiTheme.gd (tema visual compartido menú+HUD)
 │   ├── util/Constants.gd, DrawUtils.gd
-│   └── dev/smoke_test.gd     # test de regresión headless, ver más abajo
+│   ├── dev/smoke_test.gd            # test de regresión del modo local, ver más abajo
+│   └── dev/network_smoke_test.gd    # test de regresión de la integración con el servidor, ver más abajo
 ├── assets/
 │   ├── sprites/   # vacío — todo el arte actual es dibujado por código (_draw())
 │   ├── audio/
@@ -48,7 +52,8 @@ Todo el arte (personajes, rocas, nubes, terreno) se dibuja por código en `_draw
 - Arte placeholder actual: ninguno todavía. No hay "arte final" definido (ver sección 9 del maestro) — no asumir dirección de arte sin confirmar.
 - Build Android: `godot --headless --export-release "Android" build/pawfare.apk` (aún faltan presets de exportación configurados en el editor).
 - Godot 4.5 está instalado vía snap (`snap run godot4`). Abrir el editor: `snap run godot4 --path .`
-- Test de regresión headless (no requiere abrir el editor): `snap run godot4 --headless --path . --script res://scripts/dev/smoke_test.gd` — simula un disparo completo (arrastre, física, cráter, daño, cambio de turno), los 5 biomas, eliminación/podio y el modo equipos, y falla con `assert` si algo se rompe. Usa `seed(1)` al inicio para ser determinista (el terreno/rocas son aleatorios). Nota: usa `propagate_call("_ready")` en vez de dejar que el motor dispare `_ready` porque el harness de `--script` no corre el bucle normal del engine; esto es solo para el arnés de pruebas, el juego real (`--path .` sin `--script`, o el editor) no necesita este truco.
+- Test de regresión headless del modo local (no requiere abrir el editor): `snap run godot4 --headless --path . --script res://scripts/dev/smoke_test.gd` — simula un disparo completo (arrastre, física, cráter, daño, cambio de turno), los 5 biomas, eliminación/podio y el modo equipos, y falla con `assert` si algo se rompe. Usa `seed(1)` al inicio para ser determinista (el terreno/rocas son aleatorios). Nota: usa `propagate_call("_ready")` en vez de dejar que el motor dispare `_ready` porque el harness de `--script` no corre el bucle normal del engine; esto es solo para el arnés de pruebas, el juego real (`--path .` sin `--script`, o el editor) no necesita este truco.
+- Test de regresión de la integración de red: **requiere `pawfare-server` corriendo** (`npm run dev` en ese repo, puerto 2567 por defecto). Luego: `snap run godot4 --headless --path . --script res://scripts/dev/network_smoke_test.gd` — instancia dos `NetworkClient.gd` sueltos (no el singleton), hace `quickmatch` con ambos, valida que caen en la misma sala, que la partida arranca al llenarse el cupo, y que un disparo real por HTTP cambia el terreno. Si el servidor no está corriendo, este test falla con un error de conexión claro (no se cuelga).
 
 ## Estado actual
 
@@ -71,4 +76,18 @@ Modo equipos: solo disponible con 4 jugadores (2 y 3 jugadores siempre son todos
 
 **Tema visual compartido:** `scripts/ui/UiTheme.gd` construye un `Theme` en código (paneles oscuros redondeados, botones índigo con estados hover/pressed, barras de progreso con fondo translúcido) aplicado tanto en `MainMenu` como en `Hud` — antes usaban los controles grises por defecto de Godot. Sigue siendo 100% código, sin assets, consistente con el resto del proyecto.
 
-**Próximo hito:** Fase 3 — servidor `pawfare-server` con salas Colyseus de 2 a 4 jugadores, bot de respaldo si alguien se desconecta, y reconexión. El modelo de N jugadores, equipos, biomas y el menú del cliente ya están listos para que el servidor solo tenga que sincronizar `players`, turno activo, bioma elegido y terreno — no requiere otro rediseño del lado del cliente para soportarlo.
+**Integración online con `pawfare-server` (2026-08-24):** el cliente ya se conecta al servidor real. Decisión importante: Godot no tiene SDK oficial de Colyseus, y portar su protocolo binario propietario (`@colyseus/schema` v4) a GDScript a ciegas era demasiado riesgo sin poder validarlo bien — en vez de eso, `pawfare-server` expone una **API REST en JSON** (`/api/quickmatch`, `/api/rooms/:id/state`, `/fire`, `/heartbeat`, `/leave`) pensada específicamente para este cliente, y Godot la consume con `HTTPRequest` nativo. Encaja bien porque el juego es por turnos — no hace falta la latencia de un WebSocket.
+
+- **`NetworkClient.gd`** (autoload): hace `quickmatch(player_count, team_mode, biome_id)`, dispara un `Timer` de *polling* del estado cada 0.7s y otro de *heartbeat* cada 5s mientras haya una partida activa. Señales: `joined`, `join_failed`, `state_updated`, `action_failed`.
+- **`NetworkMain.gd`** (`scenes/main/NetworkMain.tscn`) es la contraparte online de `Main.gd`: **no simula física propia** — en cada `state_updated` sincroniza `Terrain.set_heights()`, reconstruye/actualiza los nodos `Player`/`Rock` desde el JSON del servidor, y solo permite arrastrar/disparar cuando el estado dice que es tu turno (`_my_turn()`). Al soltar, llama `NetworkClient.fire(dx, dy)` en vez de spawnear un proyectil local — el servidor resuelve el disparo y el resultado llega en el siguiente *poll*. Como no hay animación de vuelo del proyectil todavía, se compensa detectando el mayor cambio de altura entre un *poll* y el siguiente para lanzar el efecto de explosión (`Effects.spawn_explosion`) en el punto de impacto aproximado — es una aproximación honesta, no una simulación; ver "Pendiente" abajo.
+- **Menú:** ahora hay dos botones, "▶ Jugar local" (flujo existente, sin red) y "🌐 Jugar online" (llama `quickmatch` y, al unirse, cambia a `NetworkMain.tscn`).
+- **Presencia sin conexión persistente:** como REST no tiene un socket que "se cae", el bot de respaldo se activa por heartbeat: si el jugador en turno no manda heartbeat/disparo en `DISCONNECT_TIMEOUT_MS` (15s, definido en el servidor), el servidor lo marca `isBot=true`; un heartbeat posterior lo reconecta. El cliente no necesita saber nada de esto — solo refleja `isBot`/`connected` del estado recibido.
+- Validado end-to-end con `network_smoke_test.gd` contra un servidor real corriendo (no mockeado): dos `NetworkClient` caen en la misma sala, la partida arranca al completarse el cupo, y un disparo por HTTP cambia el terreno.
+
+**Pendiente / rough edges conocidos de la integración:**
+- No hay animación de vuelo del proyectil en modo online — el disparo se resuelve "de golpe" en el servidor y el cliente solo ve el resultado en el siguiente *poll* (hasta ~700ms de retraso), compensado parcialmente con el efecto de explosión por delta de terreno descrito arriba. Si se quiere ver el proyectil volar, habría que predecir la trayectoria en el cliente con las mismas constantes (`Constants.gd` ya coincide con `sim/Constants.ts` del servidor) mientras se espera la confirmación — no implementado todavía.
+- El botón "🔄 Jugar de nuevo" en la pantalla de fin de partida online hoy solo vuelve al menú (llama a lo mismo que "🏠 Menú principal") — no dispara un *quickmatch* directo. Aceptable por ahora, pero el texto del botón queda un poco impreciso en modo online.
+- `NetworkClient.base_url` está fijo en `http://127.0.0.1:2567/api` (`@export`, cambiable en el inspector) — no hay pantalla de configuración de servidor todavía; no hace falta hasta desplegar el servidor en algún host real.
+- Reconexión entre sesiones de la app (cerrar y reabrir Godot) no está implementada del lado cliente — `NetworkClient` no persiste `room_id`/`token` en disco. El servidor sí soporta que un jugador vuelva (heartbeat), pero hoy solo se prueba dentro de la misma sesión del cliente.
+
+**Próximo hito:** decidir entre invertir en la animación de proyectil predicha (mejor *feel* online) o seguir con contenido (roster de especies, armas) — ver la revisión de diseño de la sección de historial. La base de red ya es sólida y no debería requerir más cambios estructurales.

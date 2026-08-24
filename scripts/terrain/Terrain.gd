@@ -18,6 +18,11 @@ func set_biome(biome: Dictionary) -> void:
 	grass_color = biome.grass
 	queue_redraw()
 
+func set_heights(new_heights: Array) -> void:
+	heights = PackedFloat32Array(new_heights)
+	samples = heights.size()
+	queue_redraw()
+
 func generate_terrain() -> void:
 	heights.resize(samples)
 	var baseline := Constants.SCREEN_H * 0.62

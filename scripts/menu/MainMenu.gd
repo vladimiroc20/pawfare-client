@@ -7,6 +7,8 @@ extends Node2D
 @onready var mode_row: HBoxContainer = %ModeRow
 @onready var mode_option: OptionButton = %ModeOption
 @onready var play_button: Button = %PlayButton
+@onready var online_button: Button = %OnlineButton
+@onready var status_label: Label = %StatusLabel
 
 func _ready() -> void:
 	root.theme = UiTheme.build()
@@ -16,6 +18,7 @@ func _ready() -> void:
 	_populate_modes()
 	_update_mode_visibility()
 	play_button.pressed.connect(_on_play_pressed)
+	online_button.pressed.connect(_on_online_pressed)
 
 func _populate_player_count() -> void:
 	player_count_option.clear()
@@ -42,11 +45,32 @@ func _update_mode_visibility() -> void:
 	var count: int = player_count_option.get_item_id(player_count_option.selected)
 	mode_row.visible = count == 4
 
+func _selected_biome_id() -> String:
+	var biome_index: int = biome_option.get_item_id(biome_option.selected)
+	return "" if biome_index == 0 else Biomes.LIST[biome_index - 1].id
+
+func _selected_team_mode() -> bool:
+	return mode_row.visible and mode_option.get_item_id(mode_option.selected) == 1
+
 func _on_play_pressed() -> void:
 	var count: int = player_count_option.get_item_id(player_count_option.selected)
-	var biome_index: int = biome_option.get_item_id(biome_option.selected)
-	var biome_id: String = "" if biome_index == 0 else Biomes.LIST[biome_index - 1].id
-	var team_mode: bool = mode_row.visible and mode_option.get_item_id(mode_option.selected) == 1
-
-	GameConfig.configure(count, biome_id, team_mode)
+	GameConfig.configure(count, _selected_biome_id(), _selected_team_mode())
 	get_tree().change_scene_to_file("res://scenes/main/Main.tscn")
+
+func _on_online_pressed() -> void:
+	var count: int = player_count_option.get_item_id(player_count_option.selected)
+	play_button.disabled = true
+	online_button.disabled = true
+	status_label.text = "Buscando partida..."
+
+	NetworkClient.joined.connect(_on_joined, CONNECT_ONE_SHOT)
+	NetworkClient.join_failed.connect(_on_join_failed, CONNECT_ONE_SHOT)
+	NetworkClient.quickmatch(count, _selected_team_mode(), _selected_biome_id())
+
+func _on_joined(_state: Dictionary) -> void:
+	get_tree().change_scene_to_file("res://scenes/main/NetworkMain.tscn")
+
+func _on_join_failed(error: String) -> void:
+	play_button.disabled = false
+	online_button.disabled = false
+	status_label.text = "No se pudo conectar: " + error
