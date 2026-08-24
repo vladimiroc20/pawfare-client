@@ -32,7 +32,7 @@ func _ready() -> void:
 	NetworkClient.action_failed.connect(func(msg: String): hud.set_hint("Error: " + msg))
 	hud.restart_pressed.connect(_on_menu_pressed)
 	hud.menu_pressed.connect(_on_menu_pressed)
-	hud.weapon_selected.connect(func(id: String): selected_weapon_id = id)
+	hud.weapon_selected.connect(_on_weapon_selected)
 	hud.show_restart(false)
 	hud.hide_podium()
 	hud.set_weapon_row_visible(true)
@@ -42,6 +42,11 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	NetworkClient.leave_match()
+
+func _on_weapon_selected(id: String) -> void:
+	selected_weapon_id = id
+	if player_nodes.has(my_player_id):
+		player_nodes[my_player_id].weapon_id = id
 
 func _on_menu_pressed() -> void:
 	NetworkClient.leave_match()
@@ -137,6 +142,7 @@ func _sync_players(players_data: Array) -> void:
 		node.dir = int(p.dir)
 		node.team = int(p.team)
 		node.position = Vector2(p.x, p.y)
+		node.weapon_id = selected_weapon_id if p.id == my_player_id else Weapons.DEFAULT_ID
 
 		var was_alive: bool = last_health.get(p.id, 100.0) > 0.0
 		node.health = p.health

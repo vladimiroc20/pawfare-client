@@ -10,6 +10,7 @@ signal eliminated
 
 var terrain: Terrain
 var team: int = -1 # -1 = sin equipo (todos contra todos), 0/1 = equipo A/B
+var weapon_id: String = "bazooka"
 
 var health: float = 100.0
 var knock_vx: float = 0.0
@@ -180,10 +181,34 @@ func _draw_weapon(body_xform: Transform2D) -> void:
 	weapon_local = weapon_local * Transform2D(0.0, Vector2(0, barrel_kick))
 	draw_set_transform_matrix(body_xform * weapon_local)
 
-	draw_rect(Rect2(-4, -18, 8, 26), Color("4b5563"))
-	draw_rect(Rect2(-6, -20, 12, 6), Color("374151"))
-	draw_rect(Rect2(-3, 4, 6, 5), Color("f59e0b"))
+	match weapon_id:
+		"cluster":
+			_draw_weapon_cluster()
+		"bouncer":
+			_draw_weapon_bouncer()
+		_:
+			_draw_weapon_bazooka()
+
 	if recoil > 0.05:
 		draw_circle(Vector2(0, -22), 6.0 + recoil * 6.0, Color(1.0, 0.706, 0.235, recoil))
 
 	draw_set_transform_matrix(body_xform)
+
+func _draw_weapon_bazooka() -> void:
+	draw_rect(Rect2(-4, -18, 8, 26), Color("4b5563"))
+	draw_rect(Rect2(-6, -20, 12, 6), Color("374151"))
+	draw_rect(Rect2(-3, 4, 6, 5), Color("f59e0b"))
+
+func _draw_weapon_cluster() -> void:
+	draw_rect(Rect2(-6, -18, 12, 24), Color("4b5563"))
+	draw_rect(Rect2(-8, -20, 16, 6), Color("374151"))
+	draw_circle(Vector2(-4, -20), 2.0, Color("dc2626"))
+	draw_circle(Vector2(0, -20), 2.0, Color("dc2626"))
+	draw_circle(Vector2(4, -20), 2.0, Color("dc2626"))
+	draw_rect(Rect2(-3, 4, 6, 5), Color("f59e0b"))
+
+func _draw_weapon_bouncer() -> void:
+	draw_rect(Rect2(-4, -16, 8, 20), Color("4b5563"))
+	draw_circle(Vector2(0, -18), 5.0, Color("65a30d"))
+	draw_arc(Vector2(0, -18), 5.0, 0.0, TAU, 16, Color(0.24, 0.35, 0.06, 0.8), 1.0)
+	draw_rect(Rect2(-3, 4, 6, 5), Color("f59e0b"))

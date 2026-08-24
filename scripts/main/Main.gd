@@ -41,8 +41,13 @@ func _ready() -> void:
 
 	hud.restart_pressed.connect(new_game)
 	hud.menu_pressed.connect(_on_menu_pressed)
-	hud.weapon_selected.connect(func(id: String): active_weapon = Weapons.get_weapon(id))
+	hud.weapon_selected.connect(_on_weapon_selected)
 	new_game()
+
+func _on_weapon_selected(id: String) -> void:
+	active_weapon = Weapons.get_weapon(id)
+	if not players.is_empty():
+		current_player().weapon_id = id
 
 func _on_menu_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
@@ -165,6 +170,7 @@ func _roll_wind() -> void:
 
 func _update_turn_label() -> void:
 	hud.set_turn_text("Turno de " + Constants.PLAYER_LABELS[current_turn_index % Constants.PLAYER_LABELS.size()])
+	current_player().weapon_id = active_weapon.id
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
