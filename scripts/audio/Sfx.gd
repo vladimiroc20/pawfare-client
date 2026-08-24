@@ -90,22 +90,36 @@ func _synth_shoot() -> AudioStreamWAV:
 		samples[i] = sin(TAU * freq * time) * env * 0.5
 	return _make_wav(samples)
 
-# Estallido: ruido filtrado + retumbo grave, caída cúbica.
+# Estallido tipo "boom": tres capas superpuestas, técnica estándar de diseño de
+# sonido para explosiones (cuerpo grave separado del ruido, con un golpe de
+# sub-bajo y un chasquido inicial breve, en vez de un solo ruido con caída):
+#  1. Chasquido ("crack"): ruido blanco sin filtrar, ~20ms, es el "crac" seco del instante del impacto.
+#  2. Golpe ("thump"): seno que cae de ~110Hz a ~40Hz en los primeros 200ms — el "puñetazo" grave que se siente, no solo se oye.
+#  3. Cuerpo: ruido pasado por un filtro pasa-bajos de un polo (mucho más "boom" que ruido blanco crudo, que suena a siseo) con caída exponencial larga para el retumbo.
 func _synth_explosion() -> AudioStreamWAV:
-	var duration := 0.5
+	var duration := 0.9
 	var n := int(MIX_RATE * duration)
 	var samples := PackedFloat32Array()
 	samples.resize(n)
-	var prev_noise := 0.0
+
+	var lp_state := 0.0
+	var lp_alpha := 0.045 # corte aproximado ~300Hz: cuanto más bajo, más grave/apagado el cuerpo
+
 	for i in n:
-		var progress := float(i) / n
 		var time := float(i) / MIX_RATE
-		var env := pow(1.0 - progress, 3.0)
-		var noise := randf() * 2.0 - 1.0
-		var filtered := (noise + prev_noise) * 0.5
-		prev_noise = noise
-		var rumble := sin(TAU * 60.0 * time) * 0.4
-		samples[i] = (filtered * 0.7 + rumble * 0.5) * env
+		var white := randf() * 2.0 - 1.0
+
+		lp_state += lp_alpha * (white - lp_state)
+		var body := lp_state * exp(-time * 3.5) * 0.75
+
+		var thump_freq := lerpf(110.0, 40.0, clampf(time / 0.2, 0.0, 1.0))
+		var thump := sin(TAU * thump_freq * time) * exp(-time * 9.0) * 0.65
+
+		var crack := 0.0
+		if time < 0.02:
+			crack = white * (1.0 - time / 0.02) * 0.4
+
+		samples[i] = body + thump + crack
 	return _make_wav(samples)
 
 # Golpe corto y seco (impacto en jugador/roca).
