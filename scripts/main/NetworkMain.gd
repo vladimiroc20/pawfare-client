@@ -237,6 +237,7 @@ func _sync_obstacles(obstacles_data: Array) -> void:
 	else:
 		for i in obstacles_data.size():
 			var data = obstacles_data[i]
+			rock_nodes[i].position = Vector2(data.x, data.y)
 			rock_nodes[i].health = data.health
 			rock_nodes[i].queue_redraw()
 

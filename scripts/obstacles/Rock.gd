@@ -10,6 +10,22 @@ var shape_points: Array = []
 var rock_color: Color = Color("7d8896")
 var accent_color: Color = Color(0.42, 0.557, 0.247, 0.55)
 
+var terrain: Terrain
+var fall_vy: float = 0.0
+
+func _physics_process(_delta: float) -> void:
+	if not terrain:
+		return
+	var ground_y := terrain.height_at(position.x)
+	if position.y < ground_y - 1.0:
+		# El terreno bajo la roca pudo desaparecer (un cráter cercano, o el túnel
+		# del Perforador) sin que la roca recibiera el golpe — sin esto, se queda
+		# flotando en el aire en vez de caer.
+		fall_vy += Constants.KNOCK_GRAVITY
+		position.y = minf(position.y + fall_vy, ground_y)
+	else:
+		fall_vy = 0.0
+
 func apply_palette(base: Color, accent: Color) -> void:
 	rock_color = base
 	accent_color = accent
