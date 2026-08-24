@@ -87,13 +87,19 @@ func _draw() -> void:
 		var r: float = pt.rad
 		pts.append(Vector2(cos(a) * r, -sin(a) * r))
 	draw_colored_polygon(pts, rock_color)
+	# Faceta clara arriba — el mismo lenguaje "sticker plano + contorno grueso" que
+	# personajes y armas, en vez de un color sólido sin ningún quiebre de luz.
+	var facet := DrawUtils.ellipse_points(Vector2(-radius * 0.15, -radius * 0.5), radius * 0.55, radius * 0.32, -0.15)
+	draw_colored_polygon(facet, rock_color.lightened(0.22))
 	var outline := pts.duplicate()
 	outline.append(pts[0])
-	draw_polyline(outline, Color(0, 0, 0, 0.25), 2.0)
+	draw_polyline(outline, Color(0.086, 0.09, 0.106), 3.0)
 
 	if has_accent:
-		draw_colored_polygon(DrawUtils.ellipse_points(Vector2(-radius * 0.3, -radius * 0.6), radius * 0.4, radius * 0.22, -0.3), accent_color)
-		draw_colored_polygon(DrawUtils.ellipse_points(Vector2(radius * 0.35, -radius * 0.35), radius * 0.28, radius * 0.16, 0.4), accent_color)
+		var moss_a := DrawUtils.ellipse_points(Vector2(-radius * 0.3, -radius * 0.6), radius * 0.4, radius * 0.22, -0.3)
+		var moss_b := DrawUtils.ellipse_points(Vector2(radius * 0.35, -radius * 0.35), radius * 0.28, radius * 0.16, 0.4)
+		draw_colored_polygon(moss_a, accent_color)
+		draw_colored_polygon(moss_b, accent_color)
 
 	_draw_cracks()
 	draw_set_transform_matrix(Transform2D.IDENTITY)

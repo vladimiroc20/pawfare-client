@@ -82,17 +82,23 @@ func _draw_sun() -> void:
 	draw_circle(sun, 24.0 if not is_night else 18.0, sun_color)
 
 func _draw_mountains() -> void:
+	# Dos capas (una lejana más clara/difuminada, una cercana como antes) para dar
+	# sensación de profundidad — antes era una sola silueta plana.
+	_draw_mountain_layer(0.38, 1.7, 2.1, Color(mountain_color.r, mountain_color.g, mountain_color.b, mountain_color.a * 0.55))
+	_draw_mountain_layer(0.42, 1.0, 1.0, mountain_color)
+
+func _draw_mountain_layer(base_t: float, freq_scale: float, seed_offset: float, color: Color) -> void:
 	var w := Constants.SCREEN_W
 	var h := Constants.SCREEN_H
 	var points := PackedVector2Array()
 	points.append(Vector2(0, h * 0.5))
 	var x := 0.0
 	while x <= w:
-		var y := h * 0.42 - sin(x * 0.006 + 1.3) * 22.0 - sin(x * 0.014) * 10.0
+		var y := h * base_t - sin(x * 0.006 * freq_scale + 1.3 + seed_offset) * 22.0 - sin(x * 0.014 * freq_scale) * 10.0
 		points.append(Vector2(x, y))
 		x += 20.0
 	points.append(Vector2(w, h * 0.5))
-	draw_colored_polygon(points, mountain_color)
+	draw_colored_polygon(points, color)
 
 func _draw_clouds() -> void:
 	var col := Color(1, 1, 1, 0.85 if not is_night else 0.25)
